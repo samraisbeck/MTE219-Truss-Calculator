@@ -1,0 +1,170 @@
+All failures are in Newtons of load force!
+
+
+*****Failure due to Normal Stress***** 
+Member AB: 291.84
+Member CD: 106.149
+Member BC: 72.96
+Member AC: 512.388
+Member AD: 583.68
+
+*****Failure due to Pin Tear-out***** 
+Member AB: 107.136
+Member CD: 86.596
+Member BC: 59.52
+
+*****Failure due to Bearing Stress***** 
+Member AB: 231.648
+Member CD: 168.512
+Member BC: 115.824
+Member AC: 216.911
+Member AD: 115.824
+
+*****Failure due to Pin Shear***** 
+Joint B
+Between members BC and Ra: 60.699
+Between members Ra and AB: 364.196
+
+Joint C
+Between members CD and BC: 88.311
+Between members BC and AC: 162.878
+
+Joint D
+Between members CD and AD: 88.311
+Between members AD and P: 182.098
+
+*****Failure due to Pin Bend***** 
+Joint B: 57.5
+Joint D: 39.784
+
+*****Failure due to Buckling***** 
+Member AC: 119.487
+Member AD: 62.525
+
+*****
+Approximate mass is 14.567 g
+
+
+
+
+#### Member Specs ####
+Everything in SI units (i.e meters)
+
+---Member AB---
+Length: 50.0 mm
+Width: 8.18 mm
+Thickness: 3.2 mm
+Compression or Tension: Tension
+Force: 0.5 N
+Hole distance from edge: 9.0 mm
+Volume: 1.78 cm^3
+Area Moment of Inertia: 22.0 mm^4
+Box beam: No
+Number of hole supports: 1
+
+
+---Member AC---
+Length: 111.8 mm
+Width: 7.5 mm
+Thickness: 6.7 mm
+Compression or Tension: Compression
+Force: 1.118 N
+Hole distance from edge: 4.0 mm
+Volume: 6.02 cm^3
+Area Moment of Inertia: 188.0 mm^4
+Box beam: No
+Number of hole supports: 1
+
+
+---Member CD---
+Length: 206.2 mm
+Width: 8.38 mm
+Thickness: 3.2 mm
+Compression or Tension: Tension
+Force: 2.062 N
+Hole distance from edge: 10.0 mm
+Volume: 6.31 cm^3
+Area Moment of Inertia: 23.0 mm^4
+Box beam: No
+Number of hole supports: 3
+
+
+---Member AD---
+Length: 300.0 mm
+Width: 11.2 mm
+Thickness: 11.2 mm
+Compression or Tension: Compression
+Force: 2 N
+Hole distance from edge: 4.0 mm
+Volume: 31.44 cm^3
+Area Moment of Inertia: 1267.0 mm^4
+Box beam: Yes
+Number of hole supports: 1
+
+
+---Member BC---
+Length: 100.0 mm
+Width: 8.38 mm
+Thickness: 3.2 mm
+Compression or Tension: Tension
+Force: 3 N
+Hole distance from edge: 10.0 mm
+Volume: 3.7 cm^3
+Area Moment of Inertia: 23.0 mm^4
+Box beam: No
+Number of hole supports: 3
+
+
+---Member Rc (external force)---
+Length: 0.0 mm
+Width: 0.0 mm
+Thickness: 0.0 mm
+Compression or Tension: Tension
+Force: 3 N
+Hole distance from edge: 0.0 mm
+Volume: 0.0 cm^3
+Area Moment of Inertia: 0.0 mm^4
+Box beam: No
+Number of hole supports: 1
+
+
+---Member Ra (external force)---
+Length: 0.0 mm
+Width: 0.0 mm
+Thickness: 0.0 mm
+Compression or Tension: Compression
+Force: 3.041 N
+Hole distance from edge: 0.0 mm
+Volume: 0.0 cm^3
+Area Moment of Inertia: 0.0 mm^4
+Box beam: No
+Number of hole supports: 1
+
+
+---Member P (external force)---
+Length: 0.0 mm
+Width: 0.0 mm
+Thickness: 0.0 mm
+Compression or Tension: Tension
+Force: 1 N
+Hole distance from edge: 0.0 mm
+Volume: 0.0 cm^3
+Area Moment of Inertia: 0.0 mm^4
+Box beam: No
+Number of hole supports: 1
+
+
+### Joints ###
+
+
+---Joint A---
+Members: Rc AD AC AB 
+
+---Joint B---
+Members: BC Ra AB 
+
+---Joint C---
+Members: CD BC AC 
+
+---Joint D---
+Members: CD AD P 
