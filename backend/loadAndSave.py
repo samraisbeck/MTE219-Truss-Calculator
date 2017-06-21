@@ -2,6 +2,7 @@ import os
 from helpers import *
 from consts import *
 from components import Member, Joint
+import argparse
 
 class LoadAndSave:
     def __init__(self, dirPath):
@@ -102,5 +103,9 @@ class LoadAndSave:
         return mems, jays
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Load a specific file.')
+    parser.add_argument('loadName', help='Name of file to be loaded (excluding extension).',
+    metavar='filename', type=str)
+    args = parser.parse_args()
     a = LoadAndSave(mainDir+os.sep+'designs')
-    a.load('final')
+    a.load(args.loadName)

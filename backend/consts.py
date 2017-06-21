@@ -1,7 +1,7 @@
 # File to store constants in
 import os
 
-mainDir = os.getcwd() #Initial directory
+mainDir = os.path.dirname(os.path.dirname(__file__)) #Initial directory
 beamUltNorm = 17100000/1.5 #safety factor
 beamUltShear = 930000 #originally 2 MPa
 pinUltShear = 23000000
