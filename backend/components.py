@@ -1,5 +1,5 @@
 from consts import *
-from helpers import ifthen, ifthenelif
+from helpers import ifThen, ifthenelif
 
 class Member:
     def __init__(self, name, l, w, t, comp, f, holeDist, v = 0, i = 0, box = False, holeSupport = 1):
@@ -17,13 +17,13 @@ class Member:
         self.isBox = box #is it a box beam?
         self.holeSup = holeSupport #number hole supports (no extras is considered 1!)
         if self.isBox != 0:
-            self.i = ifthen(self.i == 0, (self.w**4)/12 - ((self.w-2*genThick)**4)/12, self.i)
-            self.v = ifthen(self.v == 0, (2*self.holeDist+self.l)*((self.w**2)-(self.w-2*genThick)**2)-((dowelDiam**2)*(pi/4)*genThick*4), self.v)
+            self.i = ifThen(self.i == 0, (self.w**4)/12 - ((self.w-2*genThick)**4)/12, self.i)
+            self.v = ifThen(self.v == 0, (2*self.holeDist+self.l)*((self.w**2)-(self.w-2*genThick)**2)-((dowelDiam**2)*(pi/4)*genThick*4), self.v)
         else:
-            self.i = ifthen(self.i == 0, self.w*(self.t**3)/12, self.i)
+            self.i = ifThen(self.i == 0, self.w*(self.t**3)/12, self.i)
             if self.v == 0:
                 self.v = ((self.l + self.holeDist*2 - 2*(dowelDiam**2) * (pi/4))*self.w*self.t)\
-                        + ifthenelif([self.n == 'CD', self.n == 'BC'], [(self.holeDist*self.w - (dowelDiam**2) * (pi/4)) * self.t, 2*((self.holeDist*self.w - (dowelDiam**2) * (pi/4)) * self.t)], 0)
+                        + ifThen([self.n == 'CD', self.n == 'BC'], [(self.holeDist*self.w - (dowelDiam**2) * (pi/4)) * self.t, 2*((self.holeDist*self.w - (dowelDiam**2) * (pi/4)) * self.t)], 0)
 
     def __str__(self):
         return '['+self.n+', '+str(self.l)+', '+str(self.w)+', '+str(self.t)+', '+str(self.comp)+', '+str(self.f)+', '+\

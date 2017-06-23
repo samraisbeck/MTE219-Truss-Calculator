@@ -23,6 +23,16 @@ def ifthenelif(statements, returns, resF=None):
             return returns[i]
     return resF
 
+def ifThen(statements, returns, resF=None):
+    """
+    USE THIS ONE!
+    works for both of the above cases.
+    """
+    if type(statements) == bool:
+        return ifthen(statements, returns, resF)
+    elif type(statements) == list:
+        return ifthenelif(statements, returns, resF)
+
 def m2mm(meters):
     return round(meters*1000, 3)
 

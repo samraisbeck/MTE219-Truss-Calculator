@@ -15,9 +15,9 @@ class LoadAndSave:
         f = open(filename+'.txt', 'w')
         f.write('All failures are in Newtons of load force!\n\n'+results+'\n\n\n#### Member Specs ####\nEverything in SI units (i.e meters)\n\n')
         for m in mList:
-            f.writelines(['---Member '+ifthen(m.l != 0,m.n,m.n+' (external force)')+'---','\nLength: '+str(m2mm(m.l)),' mm\nWidth: '+str(m2mm(m.w)),' mm\nThickness: '+str(m2mm(m.t)),\
-            ' mm\nCompression or Tension: '+ifthen(m.comp, 'Compression', 'Tension'),'\nForce: '+str(m.f),' N\nHole distance from edge: '+str(m2mm(m.holeDist)),' mm\nVolume: '+str(mc2cmc(m.v)),\
-            ' cm^3\nArea Moment of Inertia: '+str(mq2mmq(m.i)),' mm^4\nBox beam: '+ifthen(m.isBox,'Yes','No'),'\nNumber of hole supports: '+str(m.holeSup)+'\n\n\n'])
+            f.writelines(['---Member '+ifThen(m.l != 0,m.n,m.n+' (external force)')+'---','\nLength: '+str(m2mm(m.l)),' mm\nWidth: '+str(m2mm(m.w)),' mm\nThickness: '+str(m2mm(m.t)),\
+            ' mm\nCompression or Tension: '+ifThen(m.comp, 'Compression', 'Tension'),'\nForce: '+str(m.f),' N\nHole distance from edge: '+str(m2mm(m.holeDist)),' mm\nVolume: '+str(mc2cmc(m.v)),\
+            ' cm^3\nArea Moment of Inertia: '+str(mq2mmq(m.i)),' mm^4\nBox beam: '+ifThen(m.isBox,'Yes','No'),'\nNumber of hole supports: '+str(m.holeSup)+'\n\n\n'])
         f.write('### Joints ###\n')
         for j in jList:
             f.writelines(['\n\n---Joint '+j.n+'---','\nMembers: '])
@@ -47,7 +47,7 @@ class LoadAndSave:
                     try:
                         temp = float(word)
                     except:
-                        temp = ifthenelif([word[-3:]=='---', len(data[num])==0, (word=='Yes' or word=='Compression')],
+                        temp = ifThen([word[-3:]=='---', len(data[num])==0, (word=='Yes' or word=='Compression')],
                                           [word[0:2], word, True], False)
                         #The above statment is the same as the folded block here:
                         # if word[-3:] == '---':

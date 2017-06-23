@@ -16,11 +16,10 @@ Currently there is no feature implemented to do a pin-shear for more than 3-
 member joints. This is because you would need to know the geometry with angles.
 It can be done, it just would add more attributes to the members, and also would
 require consistency with reference angles and stuff like that.
- 
+
 """
 
 # Note: every value is in SI (kg, N, m, Pa etc)
-from backend.helpers import ifthen
 from backend.consts import *
 from backend.structAnalysis import StructAnalysis
 from backend.loadAndSave import LoadAndSave
@@ -52,6 +51,12 @@ print results
 save = raw_input("Would you like to save your results? (Y/N): ")
 if (save == 'y') or (save == 'Y'):
     name = raw_input('Enter a name for this design: ')
+    filename = name
     directory = mainDir+os.sep+'designs'
+    fileExists = True
+    fileCopy = 0
+    while os.path.isfile(directory+os.sep+filename+'.txt'):
+        fileCopy += 1
+        filename = name+'('+str(fileCopy)+')'
     fileHandler = LoadAndSave(directory)
-    fileHandler.save(name, results, memsList, jointsList)
+    fileHandler.save(filename, results, memsList, jointsList)

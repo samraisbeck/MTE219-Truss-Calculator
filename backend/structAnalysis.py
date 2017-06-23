@@ -13,10 +13,10 @@ class StructAnalysis:
         for i in range(len(mems)):
             res = 0
             if not mems[i].comp:
-                middle = ifthen(mems[i].n == "AB", 0.004, 0.006)
+                middle = ifThen(mems[i].n == "AB", 0.004, 0.006)
                 midFail = (beamUltNorm*(mems[i].t*middle)/mems[i].f)
                 endFail = (beamUltNorm*(mems[i].holeSup*mems[i].t*(mems[i].w - dowelDiam))/mems[i].f)
-                res = ifthen(midFail < endFail, midFail, endFail)
+                res = ifThen(midFail < endFail, midFail, endFail)
             elif mems[i].isBox:
                 res = beamUltNorm*((mems[i].w**2) - (mems[i].w - 2*genThick)**2)/mems[i].f
             else:
@@ -39,7 +39,7 @@ class StructAnalysis:
         result = ''
         for i in range(len(mems)):
             res = 0
-            res = ifthen(not mems[i].isBox, (beamUltNorm*dowelDiam*mems[i].t*mems[i].holeSup)/mems[i].f, (beamUltNorm*dowelDiam*genThick*2)/mems[i].f)
+            res = ifThen(not mems[i].isBox, (beamUltNorm*dowelDiam*mems[i].t*mems[i].holeSup)/mems[i].f, (beamUltNorm*dowelDiam*genThick*2)/mems[i].f)
             result += "Member "+mems[i].n+": "+str(round(res, 3))+'\n'
         return result
 
@@ -68,7 +68,7 @@ class StructAnalysis:
         result = ''
         for i in range(len(joints)):
             res = 0
-            res = ifthenelif([joints[i].n == "D", joints[i].n == "B"], [(pinMaxM*4/0.037), pinMaxM/(((4*genThick))*joints[i].members[-1].f)], res)
+            res = ifThen([joints[i].n == "D", joints[i].n == "B"], [(pinMaxM*4/0.037), pinMaxM/(((4*genThick))*joints[i].members[-1].f)], res)
             if res != 0:
                 result += "Joint "+joints[i].n+": "+str(round(res, 3))+'\n'
         return result
