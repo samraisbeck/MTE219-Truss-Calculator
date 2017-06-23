@@ -1,2 +1,4 @@
 designs/*
 !designs/aboutDesigns.md
+
+*.pyc
