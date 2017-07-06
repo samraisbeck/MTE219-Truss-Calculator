@@ -17,6 +17,13 @@ member joints. This is because you would need to know the geometry with angles.
 It can be done, it just would add more attributes to the members, and also would
 require consistency with reference angles and stuff like that.
 
+***Update July 5 2017
+Added a very simple GUI structure, not yet functional for adding custom
+members, but the general structure is there. The only thing to do is to
+basically get the AddMember button working, which won't be hard...but the
+joints might take some tricky GUI work. I'm thinking of adding in just a list
+of members that you can select for each joint.
+
 """
 
 # Note: every value is in SI (kg, N, m, Pa etc)
@@ -24,7 +31,74 @@ from backend.consts import *
 from backend.structAnalysis import StructAnalysis
 from backend.loadAndSave import LoadAndSave
 from backend.components import Member, Joint
-import os
+import os, sys
+from PySide import QtGui, QtCore
+
+RESULTS = ''
+
+class TrussCalc(QtGui.QMainWindow):
+    def __init__(self):
+        super(TrussCalc, self).__init__()
+        self.memsListNew = []
+        self.jointsListNew = []
+        self.specs = ['Name', 'H-H Length', 'Width', 'Thickness', 'Force', 'Hole-Edge Dist', 'Hole Support(s)', 'Compression', 'Box Beam']
+        self._initUI()
+
+    def _initUI(self):
+        self.mainGrid = QtGui.QGridLayout()
+        self.mainGrid.addWidget(self._trussSpecs(), 0, 0)
+        self.mainGrid.addWidget(self._actionControl(), 1, 0)
+        self.resize(500,250)
+        self.show()
+        Qw = QtGui.QWidget()
+        Qw.setLayout(self.mainGrid)
+        self.setCentralWidget(Qw)
+        self.setWindowTitle('Truss Failure Analysis - Sam Raisbeck 2017')
+
+    def _trussSpecs(self):
+        Qw = QtGui.QWidget()
+        grid = QtGui.QGridLayout()
+
+        for i in range(len(self.specs)):
+            mid = len(self.specs)/2
+            hbox = QtGui.QHBoxLayout()
+            hbox.addWidget(QtGui.QLabel(self.specs[i], parent=self))
+            edit = QtGui.QLineEdit()
+            edit.setPlaceholderText(self.specs[i]+'...')
+            hbox.addWidget(edit)
+            if i <= mid:
+                grid.addLayout(hbox, i, 0)
+            else:
+                grid.addLayout(hbox, i%mid, 1)
+        Qw.setLayout(grid)
+        return Qw
+
+
+    def _actionControl(self):
+        Qw = QtGui.QWidget()
+        layout = QtGui.QHBoxLayout()
+        buttonAddMember = QtGui.QPushButton('Add Member', parent=self)
+        layout.addWidget(buttonAddMember)
+        buttonAddMember.clicked.connect(self.addMember)
+        buttonCalculate = QtGui.QPushButton('Calculate!', parent=self)
+        layout.addWidget(buttonCalculate)
+        buttonCalculate.clicked.connect(self.calculate)
+
+        Qw.setLayout(layout)
+        return Qw
+
+    def addMember(self):
+        pass
+
+    def calculate(self):
+        if len(self.memsListNew) == 0:
+            self.memsListNew = memsList
+            self.jointsListNew = jointsList
+            print 'here'
+        RESULTS = StructAnalysis(self.memsListNew, self.jointsListNew).calcAll()
+        print RESULTS
+
+
 
 # Member(name, hole-hole length, endWidth, thickness, compression bool,
 #        internal force, hole distance from edge, boxBeam?, holeSupport)
@@ -45,18 +119,19 @@ D = Joint('D', [CD, AD, P])
 memsList = [AB, AC, CD, AD, BC, Rc, Ra, P]
 jointsList = [A, B, C, D]
 
-structure = StructAnalysis(memsList, jointsList)
-results = structure.calcAll()
-print results
-save = raw_input("Would you like to save your results? (Y/N): ")
-if (save == 'y') or (save == 'Y'):
-    name = raw_input('Enter a name for this design: ')
-    filename = name
-    directory = mainDir+os.sep+'designs'
-    fileExists = True
-    fileCopy = 0
-    while os.path.isfile(directory+os.sep+filename+'.txt'):
-        fileCopy += 1
-        filename = name+'('+str(fileCopy)+')'
-    fileHandler = LoadAndSave(directory)
-    fileHandler.save(filename, results, memsList, jointsList)
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    mw = TrussCalc()
+    app.exec_()
+    save = raw_input("Would you like to save your results? (Y/N): ")
+    if (save == 'y') or (save == 'Y'):
+        name = raw_input('Enter a name for this design: ')
+        filename = name
+        directory = mainDir+os.sep+'designs'
+        fileExists = True
+        fileCopy = 0
+        while os.path.isfile(directory+os.sep+filename+'.txt'):
+            fileCopy += 1
+            filename = name+'('+str(fileCopy)+')'
+        fileHandler = LoadAndSave(directory)
+        fileHandler.save(filename, RESULTS, mw.memsListNew, mw.jointsListNew)

@@ -2,12 +2,12 @@
 Program to calculate the modes of failure for a crane truss.
 
 ## General Info
-By Sam Raisbeck - Updated June 16, 2017
+By Sam Raisbeck - Updated July 5, 2017
 
 This program is meant for calculating the failure modes and corresponding
 loads for a crane design (MTE 219 @ UW). Currently, you must enter in the values
-below for member length, width, etc. Soon a GUI will be added making this
-easier.
+in `main.py` for member length, width, etc. The GUI is not functional right now
+for adding custom values for members.
 
 It's easy to create members, just add in the correct values. To create joints,
 the members must be added to the joints such that they are in order of
