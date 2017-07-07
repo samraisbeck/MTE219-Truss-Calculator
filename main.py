@@ -35,6 +35,8 @@ from backend import colorCmdHandler
 import os, sys, math
 from PySide import QtGui, QtCore
 from widgets.popUps import PopUp
+from widgets.widgetHelp import WidgetHelp
+from widgets.widgetDevelopment import WidgetDevelopment
 import logging
 
 logger = logging.getLogger(LOGGER)
@@ -192,6 +194,20 @@ class TrussCalc(QtGui.QMainWindow):
 
         self.menuBar().addMenu(m)
 
+        m = QtGui.QMenu('About', parent=self)
+        option = QtGui.QAction('Help', m)
+        option.setShortcut('Ctrl+H')
+        option.setStatusTip('Basic help.')
+        option.triggered.connect(self.showHelp)
+        m.addAction(option)
+
+        option = QtGui.QAction('Development', m)
+        option.setStatusTip('Basic help.')
+        option.triggered.connect(self.showDevelopment)
+        m.addAction(option)
+
+        self.menuBar().addMenu(m)
+
     def saveDesign(self):
         pass
 
@@ -216,6 +232,12 @@ class TrussCalc(QtGui.QMainWindow):
             button.setText('  ')
             button.setEnabled(False)
         self.createJointButton.setEnabled(False)
+
+    def showHelp(self):
+        WidgetHelp(parent=self)
+
+    def showDevelopment(self):
+        WidgetDevelopment(parent=self)
 
     def jointCreationClicked(self):
         if not self.creatingJoint:

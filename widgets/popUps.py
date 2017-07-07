@@ -2,7 +2,7 @@ from PySide import QtGui, QtCore
 from backend.consts import *
 from backend.helpers import ifThen
 
-class PopUp:
+class PopUp(object):
     def __init__(self, text, kind=INFO, parent=None):
         self.text = text
         self.kind = kind

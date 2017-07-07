@@ -108,5 +108,5 @@ if __name__ == '__main__':
     parser.add_argument('loadName', help='Name of file to be loaded (excluding extension).',
     metavar='filename', type=str)
     args = parser.parse_args()
-    a = LoadAndSave(os.path.dirname(os.path.dirname(__file__))+os.sep+'designs')
+    a = LoadAndSave(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+os.sep+'designs')
     a.load(args.loadName)

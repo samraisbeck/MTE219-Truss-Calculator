@@ -2,12 +2,15 @@
 Program to calculate the modes of failure for a crane truss.
 
 ## General Info
-By Sam Raisbeck - Updated July 5, 2017
+By Sam Raisbeck - Updated July 7, 2017
 
 This program is meant for calculating the failure modes and corresponding
-loads for a crane design (MTE 219 @ UW). Currently, you must enter in the values
-in `main.py` for member length, width, etc. The GUI is not functional right now
-for adding custom values for members.
+loads for a crane design (MTE 219 @ UW). To look see how to use the GUI, run
+the program and go to About->Help or hit Ctrl+H. Currently, the save and
+load features are not working, but you should be able to create your design
+and calculate the results. Then, upon closing the program, it will give the
+option to save the design. However, saving should soon become functional from
+within the GUI itself.
 
 It's easy to create members, just add in the correct values. To create joints,
 the members must be added to the joints such that they are in order of
@@ -21,13 +24,13 @@ member joints. This is because you would need to know the geometry with angles.
 It can be done, it just would add more attributes to the members, and also would
 require consistency with reference angles and stuff like that.
 
-Right now, the load feature does not do anything...this is for when I implement
-an actual GUI. When it's ready, it will basically allow you to load an existing crane
-configuration that had already been saved. So when you first start off, you'll have to
-begin creating and saving designs. Then if you would like to return to a previous
-design to, say, modify it in a slightly different way, you will be able to.
+Right now you can actually load designs by directly running loadAndSave.py with: `python backend\loadAndSave.py <filename>`. Do not include the extention (.txt). This is just a proof of concept for now though...soon,
+I hope to implement a load feature where you can load a design and then
+edit one by one the members part of that design.
 
-The current version saves crane designs as text files into the `designs` folder.
+
+
+The current version saves crane designs as text files into the `designs` folder after the program GUI closes.
 They come in the format of failure results at the top, and member/joint specs at the
 bottom. The load function is coded to follow the format of how it's saved, so it can only
 load previously saved files, or ones that have been typed up to resemble it.
