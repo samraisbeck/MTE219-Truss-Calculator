@@ -1,7 +1,6 @@
 # File to store constants in
 import os
 
-mainDir = os.path.dirname(os.path.dirname(__file__)) #Initial directory
 beamUltNorm = 17100000/1.5 #safety factor
 beamUltShear = 930000 #originally 2 MPa
 pinUltShear = 23000000
@@ -12,3 +11,11 @@ E = 3600000000
 pi = 3.14159265359
 memDens = 133
 jointDens = 650
+
+INFO = 0
+WARN = 1
+ERR = 2
+
+
+alphabet = 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'
+LOGGER = 'TrusCalc.SRaisbeck'

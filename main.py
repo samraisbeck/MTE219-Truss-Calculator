@@ -31,8 +31,13 @@ from backend.consts import *
 from backend.structAnalysis import StructAnalysis
 from backend.loadAndSave import LoadAndSave
 from backend.components import Member, Joint
-import os, sys
+from backend import colorCmdHandler
+import os, sys, math
 from PySide import QtGui, QtCore
+from widgets.popUps import PopUp
+import logging
+
+logger = logging.getLogger(LOGGER)
 
 RESULTS = ''
 
@@ -42,44 +47,120 @@ class TrussCalc(QtGui.QMainWindow):
         self.memsListNew = []
         self.jointsListNew = []
         self.specs = ['Name', 'H-H Length', 'Width', 'Thickness', 'Force', 'Hole-Edge Dist', 'Hole Support(s)', 'Compression', 'Box Beam']
+        self.specInfo = []
+        self.jointInfo = []
+        self.selectedJoints = []
+        self.createJointButton = None
+        self.creatingJoint = False
+        self.specGrid = None
+        self._initLogger()
         self._initUI()
+
+    def _initLogger(self):
+        logfname = os.path.dirname(os.path.abspath(__file__))+os.sep+'temp.log'
+        root_logger = logging.getLogger()
+
+        file_log_handler = logging.FileHandler(logfname)
+        root_logger.addHandler(file_log_handler)
+        stderr_log_handler = colorCmdHandler.ColorStreamHandler()
+        root_logger.addHandler(stderr_log_handler)
+
+        # nice output format
+        formatter = logging.Formatter('%(filename)s - %(levelname)-s - %(message)s')
+        file_log_handler.setFormatter(formatter)
+        root_logger.setLevel(logging.DEBUG)
+        stderr_log_handler.setFormatter(formatter)
+        stderr_log_handler.setLevel(logging.INFO)
 
     def _initUI(self):
         self.mainGrid = QtGui.QGridLayout()
-        self.mainGrid.addWidget(self._trussSpecs(), 0, 0)
-        self.mainGrid.addWidget(self._actionControl(), 1, 0)
+        titleFont = QtGui.QFont()
+        titleFont.setBold(True)
+        titleFont.setPointSize(15)
+        title1 = QtGui.QLabel('Member Specifications', parent=self)
+        title1.setFont(titleFont)
+        title2 = QtGui.QLabel('Joint Specifications', parent=self)
+        title2.setFont(titleFont)
+        separator = QtGui.QFrame()
+        separator.setFrameShape(QtGui.QFrame.VLine)
+        separator.setFrameShadow(QtGui.QFrame.Sunken)
+        self.mainGrid.addWidget(title1, 0, 0, alignment=QtCore.Qt.AlignHCenter)
+        self.mainGrid.addWidget(separator, 0, 1, 2, 1)
+        self.mainGrid.addWidget(title2, 0, 2, alignment=QtCore.Qt.AlignHCenter)
+        self.mainGrid.addWidget(self._trussSpecs(), 1, 0)
+        self.mainGrid.addWidget(self._jointSpecs(), 1, 2)
+        self.mainGrid.addWidget(self._actionControl(), 2, 0, 1, 3)
+        self._createToolbar()
         self.resize(500,250)
         self.show()
         Qw = QtGui.QWidget()
         Qw.setLayout(self.mainGrid)
         self.setCentralWidget(Qw)
         self.setWindowTitle('Truss Failure Analysis - Sam Raisbeck 2017')
+        self.updateStatus('Add some members.')
 
     def _trussSpecs(self):
         Qw = QtGui.QWidget()
-        grid = QtGui.QGridLayout()
-
+        self.specGrid = QtGui.QGridLayout()
+        mid = len(self.specs)/2
+        print mid
         for i in range(len(self.specs)):
-            mid = len(self.specs)/2
             hbox = QtGui.QHBoxLayout()
-            hbox.addWidget(QtGui.QLabel(self.specs[i], parent=self))
-            edit = QtGui.QLineEdit()
-            edit.setPlaceholderText(self.specs[i]+'...')
-            hbox.addWidget(edit)
-            if i <= mid:
-                grid.addLayout(hbox, i, 0)
+            if self.specs[i] == 'Compression' or self.specs[i] == 'Box Beam':
+                checkbox = QtGui.QCheckBox(self.specs[i], parent=self)
+                self.specInfo.append(checkbox)
+                hbox.addWidget(checkbox)
+                #hbox.setAlignment(checkbox, QtCore.Qt.AlignHCenter)
             else:
-                grid.addLayout(hbox, i%mid, 1)
-        Qw.setLayout(grid)
+                hbox.addWidget(QtGui.QLabel(self.specs[i], parent=self))
+                edit = QtGui.QLineEdit()
+                self.specInfo.append(edit)
+                edit.setPlaceholderText(self.specs[i]+'...')
+                hbox.addWidget(edit)
+            if i <= mid:
+                print i
+                self.specGrid.addLayout(hbox, i, 0)
+            else:
+                print i%(mid+1)
+                self.specGrid.addLayout(hbox, i%(mid+1), 1)
+        buttonAddMember = QtGui.QPushButton('Add Member', parent=self)
+        self.specGrid.addWidget(buttonAddMember, len(self.specs)%(mid+1), 1)
+        buttonAddMember.clicked.connect(self.addMember)
+        Qw.setLayout(self.specGrid)
         return Qw
 
+    def _jointSpecs(self):
+        Qw = QtGui.QWidget()
+        grid = QtGui.QGridLayout()
+        self.jointGrid = QtGui.QGridLayout()
+        grid.addWidget(QtGui.QLabel('Name', parent=self),0,0)
+        edit = QtGui.QLineEdit()
+        edit.setPlaceholderText('Joint name...')
+        self.jointInfo.append(edit)
+        grid.addWidget(edit, 0, 1)
+        self.createJointButton = QtGui.QPushButton('Begin Joint Creation', parent=self)
+        self.createJointButton.setMinimumWidth(round(0.2*self.width()))
+        self.createJointButton.clicked.connect(self.jointCreationClicked)
+        self.createJointButton.setEnabled(False)
+        grid.addWidget(self.createJointButton, 0, 2)
+        #self.jointGrid.addWidget(QtGui.QLabel('Available Members'), 1, 0, 1, 2)
+        for i in range(4):
+            for j in range(5):
+                memButton = QtGui.QPushButton('  ', parent=self)
+                memButton.setEnabled(False)
+                self.connect(memButton, QtCore.SIGNAL('pressed()'), self.appendJoint)
+                self.jointGrid.addWidget(memButton, i, j)
+                self.jointInfo.append(memButton)
+        grid.addLayout(self.jointGrid, 1, 0, 1, 3)
+        Qw.setLayout(grid)
+        return Qw
 
     def _actionControl(self):
         Qw = QtGui.QWidget()
         layout = QtGui.QHBoxLayout()
-        buttonAddMember = QtGui.QPushButton('Add Member', parent=self)
-        layout.addWidget(buttonAddMember)
-        buttonAddMember.clicked.connect(self.addMember)
+        buttonViewComponents = QtGui.QPushButton('View Components', parent=self)
+        layout.addWidget(buttonViewComponents)
+        buttonViewComponents.clicked.connect(self.viewComponents)
         buttonCalculate = QtGui.QPushButton('Calculate!', parent=self)
         layout.addWidget(buttonCalculate)
         buttonCalculate.clicked.connect(self.calculate)
@@ -87,17 +168,131 @@ class TrussCalc(QtGui.QMainWindow):
         Qw.setLayout(layout)
         return Qw
 
-    def addMember(self):
+    def _createToolbar(self):
+        m = QtGui.QMenu('File', parent=self)
+        option = QtGui.QAction('Save', m)
+        option.setShortcut('Ctrl+S')
+        option.setStatusTip('Save the design and results as a text file.')
+        option.triggered.connect(self.saveDesign)
+        m.addAction(option)
+
+        option = QtGui.QAction('Load', m)
+        option.setShortcut('Ctrl+L')
+        option.setStatusTip('Load a design and its results from a previously saved file.')
+        option.triggered.connect(self.loadDesign)
+        m.addAction(option)
+
+        m.addSeparator()
+
+        option = QtGui.QAction('New', m)
+        option.setShortcut('Ctrl+N')
+        option.setStatusTip('Clear the current design and begin from scratch.')
+        option.triggered.connect(self.newDesign)
+        m.addAction(option)
+
+        self.menuBar().addMenu(m)
+
+    def saveDesign(self):
         pass
 
+    def loadDesign(self):
+        pass
+
+    def newDesign(self):
+        # Empty the lists
+        self.memsListNew = []
+        self.jointsListNew = []
+        # Set each textbox and checkbox to blank
+        for i in range(len(self.specs)):
+            if type(self.specInfo[i]) == QtGui.QLineEdit:
+                self.specInfo[i].setText('')
+            else:
+                self.specInfo[i].setChecked(False)
+        # Set joint name textbox to blank, disable and clear member buttons
+        self.jointInfo[0].setText('')
+        for button in self.jointInfo[1:]:
+            if not button.isEnabled():
+                break
+            button.setText('  ')
+            button.setEnabled(False)
+        self.createJointButton.setEnabled(False)
+
+    def jointCreationClicked(self):
+        if not self.creatingJoint:
+            self.creatingJoint = True
+            self.createJointButton.setText('Add New Joint')
+            self.updateStatus('Select the members on the joint, order matters (see Help).')
+        else:
+            try:
+                if len(self.selectedJoints) < 2:
+                    raise
+                newJoint = Joint(self.jointInfo[0].text(), self.selectedJoints)
+                self.jointsListNew.append(newJoint)
+            except:
+                PopUp('ERROR: Joint must have at least 2 members attached!', ERR, self)
+                logger.error('Joint must have at least 2 members attached!')
+            for button in self.jointInfo[1:]:
+                if button.text() == '  ':
+                    break
+                elif not button.isEnabled():
+                    button.setEnabled(True)
+            self.creatingJoint = False
+            self.createJointButton.setText('Begin Joint Creation')
+            self.selectedJoints = []
+            self.updateStatus('Add some members or joints.')
+
+    def addMember(self):
+        try:
+            newMember = Member(self.specInfo[0].text(), float(self.specInfo[1].text()), float(self.specInfo[2].text()),
+                               float(self.specInfo[3].text()), self.specInfo[7].isChecked(), float(self.specInfo[4].text()),
+                               float(self.specInfo[5].text()), box=self.specInfo[8].isChecked(), holeSupport=int(self.specInfo[6].text()))
+            self.memsListNew.append(newMember)
+            #Adding the corresponding button for the joint-building tool
+            for button in self.jointInfo[1:]:
+                if button.text() == '  ':
+                    button.setText(newMember.n)
+                    button.setEnabled(True)
+                    break
+            if not self.createJointButton.isEnabled() and len(self.memsListNew) > 1:
+                self.createJointButton.setEnabled(True)
+                self.updateStatus('Add some members or joints.')
+        except:
+            PopUp("ERROR: Check the entries you have made, they should all be numbers, except the name...", ERR, self)
+            logger.error("Check the entries you have made, they should all be numbers, except the name...")
+
+    def appendJoint(self):
+        if not self.creatingJoint:
+            return
+        button = self.sender()
+        text = button.text()
+        button.setEnabled(False)
+        for mem in self.memsListNew:
+            if mem.n == text:
+                self.selectedJoints.append(mem)
+                break
+
+    def viewComponents(self):
+        print 'List of members:'
+        for i in self.memsListNew:
+            print i
+        if self.memsListNew == []:
+            print 'Currently no members!'
+        print '\nList of joints:'
+        for i in self.jointsListNew:
+            print i
+        if self.jointsListNew == []:
+            print 'Currently no joints!'
+
     def calculate(self):
-        if len(self.memsListNew) == 0:
+        if len(self.jointsListNew) == 0:
             self.memsListNew = memsList
             self.jointsListNew = jointsList
             print 'here'
         RESULTS = StructAnalysis(self.memsListNew, self.jointsListNew).calcAll()
         print RESULTS
 
+    def updateStatus(self, msg):
+        self.statusBar().showMessage(msg)
 
 
 # Member(name, hole-hole length, endWidth, thickness, compression bool,
@@ -123,11 +318,13 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     mw = TrussCalc()
     app.exec_()
+    if mw.memsListNew == []:
+        sys.exit(0)
     save = raw_input("Would you like to save your results? (Y/N): ")
     if (save == 'y') or (save == 'Y'):
         name = raw_input('Enter a name for this design: ')
         filename = name
-        directory = mainDir+os.sep+'designs'
+        directory = os.path.dirname(os.path.dirname(__file__))+os.sep+'designs'
         fileExists = True
         fileCopy = 0
         while os.path.isfile(directory+os.sep+filename+'.txt'):

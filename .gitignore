@@ -2,3 +2,4 @@ designs/*
 !designs/aboutDesigns.md
 
 *.pyc
+*.log
