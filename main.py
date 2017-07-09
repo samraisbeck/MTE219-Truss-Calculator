@@ -59,17 +59,12 @@ class TrussCalc(QtGui.QMainWindow):
         self._initUI()
 
     def _initLogger(self):
-        logfname = os.path.dirname(os.path.abspath(__file__))+os.sep+'temp.log'
-        root_logger = logging.getLogger()
 
-        file_log_handler = logging.FileHandler(logfname)
-        root_logger.addHandler(file_log_handler)
+        root_logger = logging.getLogger()
         stderr_log_handler = colorCmdHandler.ColorStreamHandler()
         root_logger.addHandler(stderr_log_handler)
 
-        # nice output format
-        formatter = logging.Formatter('%(filename)s - %(levelname)-s - %(message)s')
-        file_log_handler.setFormatter(formatter)
+        formatter = logging.Formatter('%(levelname)-s message from %(filename)s - %(message)s')
         root_logger.setLevel(logging.DEBUG)
         stderr_log_handler.setFormatter(formatter)
         stderr_log_handler.setLevel(logging.INFO)

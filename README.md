@@ -28,20 +28,25 @@ Right now you can actually load designs by directly running loadAndSave.py with:
 I hope to implement a load feature where you can load a design and then
 edit one by one the members part of that design.
 
-
-
 The current version saves crane designs as text files into the `designs` folder after the program GUI closes.
 They come in the format of failure results at the top, and member/joint specs at the
 bottom. The load function is coded to follow the format of how it's saved, so it can only
 load previously saved files, or ones that have been typed up to resemble it.
 
+So far, there is no optimization features, as this would require the actual
+geometry of the structure.
+
+#### Dependencies
+The only external package really is PySide. I used Enthought Canopy package manager
+to download PySide, but I think `pip install pyside` would also work. I haven't tried
+that though.
+
+#### Utilizing the Software
+
 This is a very specific project as it is for a class project but it can
 be modified for similar projects (i.e a bridge rather than a crane).
 If by any means you would like to use this for something, feel free, but
 *please* reference the repository and my name.
-
-So far, there is no optimization features, as this would require the actual
-geometry of the structure.
 
 ## Comments
 If you think a feature would be useful, leave a comment, or implement it
