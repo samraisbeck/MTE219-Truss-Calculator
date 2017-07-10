@@ -11,7 +11,7 @@ class LoadAndSave:
     def save(self, filename, results, mList, jList):
         if not os.path.exists(self.dirPath):
             os.makedirs(self.dirPath)
-        os.chdir(self.dirPath)
+        #os.chdir(self.dirPath)
         f = open(filename+'.txt', 'w')
         f.write('All failures are in Newtons of load force!\n\n'+results+'\n\n\n#### Member Specs ####\nEverything in SI units (i.e meters)\n\n')
         for m in mList:
@@ -26,9 +26,8 @@ class LoadAndSave:
         f.close()
 
     def load(self, filename):
-        print self.dirPath
-        os.chdir(self.dirPath)
-        f = open(filename+'.txt', 'r')
+        #os.chdir(self.dirPath)
+        f = open(filename, 'r')
         # Skip past the results and to the member specs.
         for line in f:
             if line[0] == '#':
@@ -81,6 +80,7 @@ class LoadAndSave:
                     pass
                 else:
                     jData[num].append(word)
+        f.close()
         return self.createLoadedMembers(data, jData)
 
     def createLoadedMembers(self, mDataArray, jDataArray):
@@ -97,10 +97,10 @@ class LoadAndSave:
                         jayMems.append(M)
                         break
             jays.append(Joint(Set[0], jayMems))
-        for m in mems:
-            print m
-        for j in jays:
-            print j
+        # for m in mems:
+        #     print m
+        # for j in jays:
+        #     print j
         return mems, jays
 
 if __name__ == '__main__':

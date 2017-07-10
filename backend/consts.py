@@ -18,4 +18,4 @@ ERR = 2
 
 
 alphabet = 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'
-LOGGER = 'TrusCalc.SRaisbeck'
+LOGGER = 'TrussCalc.SRaisbeck'

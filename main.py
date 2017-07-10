@@ -48,7 +48,12 @@ class TrussCalc(QtGui.QMainWindow):
         super(TrussCalc, self).__init__()
         self.memsListNew = []
         self.jointsListNew = []
+        self.mIndex = -1
+        self.jIndex = -1
         self.specs = ['Name', 'H-H Length', 'Width', 'Thickness', 'Force', 'Hole-Edge Dist', 'Hole Support(s)', 'Compression', 'Box Beam']
+        self.tips = ['Name should be two letters corresponding to the end joints (i.e AD)', 'Distance between the centers of the holes on each end', 'Width of the member',\
+                     'Thickness of the member', 'Force relative to the applied load', 'Distance from the center of the hole to the end edge of the member', \
+                     'Number of added hole supports (this is 0 if none are glued on)', 'Is the member under compression?', 'Is the member a box beam?']
         self.specInfo = []
         self.jointInfo = []
         self.selectedJoints = []
@@ -100,11 +105,11 @@ class TrussCalc(QtGui.QMainWindow):
         Qw = QtGui.QWidget()
         self.specGrid = QtGui.QGridLayout()
         mid = len(self.specs)/2
-        print mid
         for i in range(len(self.specs)):
             hbox = QtGui.QHBoxLayout()
             if self.specs[i] == 'Compression' or self.specs[i] == 'Box Beam':
                 checkbox = QtGui.QCheckBox(self.specs[i], parent=self)
+                checkbox.setToolTip(self.tips[i])
                 self.specInfo.append(checkbox)
                 hbox.addWidget(checkbox)
                 #hbox.setAlignment(checkbox, QtCore.Qt.AlignHCenter)
@@ -113,16 +118,30 @@ class TrussCalc(QtGui.QMainWindow):
                 edit = QtGui.QLineEdit()
                 self.specInfo.append(edit)
                 edit.setPlaceholderText(self.specs[i]+'...')
+                edit.setToolTip(self.tips[i])
                 hbox.addWidget(edit)
             if i <= mid:
-                print i
                 self.specGrid.addLayout(hbox, i, 0)
             else:
-                print i%(mid+1)
                 self.specGrid.addLayout(hbox, i%(mid+1), 1)
+        smallBox = QtGui.QHBoxLayout()
         buttonAddMember = QtGui.QPushButton('Add Member', parent=self)
-        self.specGrid.addWidget(buttonAddMember, len(self.specs)%(mid+1), 1)
+        smallBox.addWidget(buttonAddMember)
         buttonAddMember.clicked.connect(self.addMember)
+        buttonFixMember = QtGui.QPushButton('Edit Member', parent=self)
+        smallBox.addWidget(buttonFixMember)
+        buttonFixMember.clicked.connect(self.fixMember)
+        self.specGrid.addLayout(smallBox, len(self.specs)%(mid+1), 1)
+        smallBox = QtGui.QHBoxLayout()
+        self.buttonSeekLeft = QtGui.QPushButton('Previous', parent=self)
+        self.buttonSeekLeft.setEnabled(False)
+        smallBox.addWidget(self.buttonSeekLeft)
+        self.buttonSeekLeft.clicked.connect(self.seekLeft)
+        self.buttonSeekRight = QtGui.QPushButton('Next', parent=self)
+        self.buttonSeekRight.setEnabled(False)
+        smallBox.addWidget(self.buttonSeekRight)
+        self.buttonSeekRight.clicked.connect(self.seekRight)
+        self.specGrid.addLayout(smallBox, len(self.specs)%(mid+1)+1, 0, 1, 2)
         Qw.setLayout(self.specGrid)
         return Qw
 
@@ -207,7 +226,21 @@ class TrussCalc(QtGui.QMainWindow):
         pass
 
     def loadDesign(self):
-        pass
+        loadFile = QtGui.QFileDialog.getOpenFileName(self, 'Select a file to load', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
+        handler = LoadAndSave(os.path.dirname(loadFile[0]))
+        loadedMems, loadedJoints = handler.load(loadFile[0])
+        self.memsListNew, self.jointsListNew = loadedMems, loadedJoints
+        self.mIndex = len(self.memsListNew)-1
+        self.setMemTextBoxes()
+        for i in range(len(self.memsListNew)):
+            self.jointInfo[i+1].setText(self.memsListNew[i].n)
+            self.jointInfo[i+1].setEnabled(True)
+        for button in self.jointInfo[self.mIndex+2:]:
+            if not button.isEnabled():
+                break
+            button.setEnabled(False)
+        self.buttonSeekRight.setEnabled(False)
+        self.buttonSeekLeft.setEnabled(True)
 
     def newDesign(self):
         # Empty the lists
@@ -227,6 +260,8 @@ class TrussCalc(QtGui.QMainWindow):
             button.setText('  ')
             button.setEnabled(False)
         self.createJointButton.setEnabled(False)
+        self.jIndex = 0
+        self.mIndex = 0
 
     def showHelp(self):
         WidgetHelp(parent=self)
@@ -234,9 +269,45 @@ class TrussCalc(QtGui.QMainWindow):
     def showDevelopment(self):
         WidgetDevelopment(parent=self)
 
+    def seekLeft(self):
+        if not self.buttonSeekRight.isEnabled():
+            self.buttonSeekRight.setEnabled(True)
+        self.mIndex -= 1
+        self.setMemTextBoxes()
+        if self.mIndex == 0:
+            self.buttonSeekLeft.setEnabled(False)
+
+    def seekRight(self):
+        if not self.buttonSeekLeft.isEnabled():
+            self.buttonSeekLeft.setEnabled(True)
+        self.mIndex += 1
+        self.setMemTextBoxes()
+        if self.mIndex == len(self.memsListNew)-1:
+            self.buttonSeekRight.setEnabled(False)
+
+    def setMemTextBoxes(self):
+        member = self.memsListNew[self.mIndex]
+        self.specInfo[0].setText(member.n)
+        self.specInfo[1].setText(str(member.l))
+        self.specInfo[2].setText(str(member.w))
+        self.specInfo[3].setText(str(member.t))
+        self.specInfo[4].setText(str(member.f))
+        self.specInfo[5].setText(str(member.holeDist))
+        self.specInfo[6].setText(str(member.holeSup-1))
+        if member.comp:
+            self.specInfo[7].setChecked(True)
+        else:
+            self.specInfo[7].setChecked(False)
+        if member.isBox:
+            self.specInfo[8].setChecked(True)
+        else:
+            self.specInfo[8].setChecked(False)
+
+
     def jointCreationClicked(self):
         if not self.creatingJoint:
             self.creatingJoint = True
+            logger.info('Now creating joint...')
             self.createJointButton.setText('Add New Joint')
             self.updateStatus('Select the members on the joint, order matters (see Help).')
         else:
@@ -245,6 +316,7 @@ class TrussCalc(QtGui.QMainWindow):
                     raise
                 newJoint = Joint(self.jointInfo[0].text(), self.selectedJoints)
                 self.jointsListNew.append(newJoint)
+                logger.info('Created joint: '+str(newJoint))
             except:
                 PopUp('ERROR: Joint must have at least 2 members attached!', ERR, self)
                 logger.error('Joint must have at least 2 members attached!')
@@ -264,21 +336,45 @@ class TrussCalc(QtGui.QMainWindow):
                                float(self.specInfo[3].text()), self.specInfo[7].isChecked(), float(self.specInfo[4].text()),
                                float(self.specInfo[5].text()), box=self.specInfo[8].isChecked(), holeSupport=int(self.specInfo[6].text()))
             self.memsListNew.append(newMember)
+            self.mIndex = len(self.memsListNew)-1
             #Adding the corresponding button for the joint-building tool
-            for button in self.jointInfo[1:]:
-                if button.text() == '  ':
-                    button.setText(newMember.n)
-                    button.setEnabled(True)
-                    break
+            self.jointInfo[self.mIndex+1].setText(newMember.n)
+            self.jointInfo[self.mIndex+1].setEnabled(True)
             if not self.createJointButton.isEnabled() and len(self.memsListNew) > 1:
                 self.createJointButton.setEnabled(True)
                 self.updateStatus('Add some members or joints.')
+            if self.mIndex > 0 and not self.buttonSeekLeft.isEnabled():
+                self.buttonSeekLeft.setEnabled(True)
+            if self.buttonSeekRight.isEnabled():
+                self.buttonSeekRight.setEnabled(False)
+            logger.info('Added member with data: '+str(newMember))
         except:
             PopUp("ERROR: Check the entries you have made, they should all be numbers, except the name...", ERR, self)
             logger.error("Check the entries you have made, they should all be numbers, except the name...")
 
+    def fixMember(self):
+        try:
+            oldMember = self.memsListNew[self.mIndex]
+            fixedMember = Member(self.specInfo[0].text(), float(self.specInfo[1].text()), float(self.specInfo[2].text()),
+                               float(self.specInfo[3].text()), self.specInfo[7].isChecked(), float(self.specInfo[4].text()),
+                               float(self.specInfo[5].text()), box=self.specInfo[8].isChecked(), holeSupport=int(self.specInfo[6].text()))
+            self.memsListNew[self.mIndex] = fixedMember
+            # Here, we check if the member edited was part of any joints, and if so,
+            # make sure that joint is updated to use the newly edited member
+            if oldMember.n != fixedMember.n:
+                self.jointInfo[self.mIndex+1].setText(fixedMember.n)
+            for i in range(len(self.jointsListNew)):
+                for m in range(len(self.jointsListNew[i].members)):
+                    if self.jointsListNew[i].members[m].n == oldMember.n:
+                        self.jointsListNew[i].members[m] = fixedMember
+            logger.info('Updated the following member:\n'+str(oldMember)+'\nto\n'+str(fixedMember))
+        except:
+            PopUp("ERROR: Check the entries you have made, they should all be numbers, except the name...", ERR, self)
+            logger.error("Check the entries you have made, they should all be numbers, except the name...")
     def appendJoint(self):
-        if not self.creatingJoint:
+        if not self.creatingJoint and self.createJointButton.isEnabled():
+            PopUp('WARNING: You must press "Begin Joint Creation" then select the joints!', WARN, self)
+            logger.warning('You must press "Begin Joint Creation" then select the joints!')
             return
         button = self.sender()
         text = button.text()
@@ -302,9 +398,8 @@ class TrussCalc(QtGui.QMainWindow):
 
     def calculate(self):
         if len(self.jointsListNew) == 0:
-            self.memsListNew = memsList
-            self.jointsListNew = jointsList
-            print 'here'
+            PopUp('ERROR: Can\'t calculate this design.', ERR, self)
+            logger.error('Can\'t calculate this design.')
         RESULTS = StructAnalysis(self.memsListNew, self.jointsListNew).calcAll()
         print RESULTS
 
@@ -314,22 +409,22 @@ class TrussCalc(QtGui.QMainWindow):
 
 # Member(name, hole-hole length, endWidth, thickness, compression bool,
 #        internal force, hole distance from edge, boxBeam?, holeSupport)
-AD = Member('AD', 0.3, 0.0112, 0.0112, True, 2, 0.004, box = True)
-CD = Member('CD', 0.2062, 0.00838, 0.0032, False, 2.062, 0.01, holeSupport = 3)
-AC = Member('AC', 0.1118, 0.0075, 0.0067, True, 1.118, 0.004)
-AB = Member('AB', 0.05, 0.00818, 0.0032, False, 0.5, 0.009)
-BC = Member('BC', 0.1, 0.00838, 0.0032, False, 3, 0.01, holeSupport = 3)
-Rc = Member('Rc', 0, 0, 0, False, 3, 0)
-Ra = Member('Ra', 0, 0, 0, True, 3.041, 0)
-P = Member('P', 0, 0, 0, False, 1, 0)
+# AD = Member('AD', 0.3, 0.0112, 0.0112, True, 2, 0.004, box = True)
+# CD = Member('CD', 0.2062, 0.00838, 0.0032, False, 2.062, 0.01, holeSupport = 3)
+# AC = Member('AC', 0.1118, 0.0075, 0.0067, True, 1.118, 0.004)
+# AB = Member('AB', 0.05, 0.00818, 0.0032, False, 0.5, 0.009)
+# BC = Member('BC', 0.1, 0.00838, 0.0032, False, 3, 0.01, holeSupport = 3)
+# Rc = Member('Rc', 0, 0, 0, False, 3, 0)
+# Ra = Member('Ra', 0, 0, 0, True, 3.041, 0)
+# P = Member('P', 0, 0, 0, False, 1, 0)
 
-A = Joint('A', [Rc, AD, AC, AB])
-B = Joint('B', [BC, Ra, AB])
-C = Joint('C', [CD, BC, AC])
-D = Joint('D', [CD, AD, P])
+# A = Joint('A', [Rc, AD, AC, AB])
+# B = Joint('B', [BC, Ra, AB])
+# C = Joint('C', [CD, BC, AC])
+# D = Joint('D', [CD, AD, P])
 
-memsList = [AB, AC, CD, AD, BC, Rc, Ra, P]
-jointsList = [A, B, C, D]
+# memsList = [AB, AC, CD, AD, BC, Rc, Ra, P]
+# jointsList = [A, B, C, D]
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
@@ -341,11 +436,10 @@ if __name__ == '__main__':
     if (save == 'y') or (save == 'Y'):
         name = raw_input('Enter a name for this design: ')
         filename = name
-        directory = os.path.dirname(os.path.dirname(__file__))+os.sep+'designs'
-        fileExists = True
+        directory = os.path.dirname(os.path.abspath(__file__))+os.sep+'designs'
         fileCopy = 0
         while os.path.isfile(directory+os.sep+filename+'.txt'):
             fileCopy += 1
             filename = name+'('+str(fileCopy)+')'
         fileHandler = LoadAndSave(directory)
-        fileHandler.save(filename, RESULTS, mw.memsListNew, mw.jointsListNew)
+        fileHandler.save(directory+os.sep+filename, RESULTS, mw.memsListNew, mw.jointsListNew)

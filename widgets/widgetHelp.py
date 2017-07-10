@@ -12,5 +12,5 @@ class WidgetHelp(PopUp):
         'done adding joints, click "Add New Joints".\n\n3. When done creating the design, or while '+\
         'creating it, you can verify the members and joints by clicking "View Components". \n\n'+\
         '4. When done and ready, click "Calculate!" The command line should fill up with the '+\
-        'results.'
+        'results.\n\nVERY IMPORTANT! All measurements are based on METERS.'
         super(WidgetHelp, self).__init__(self.text, INFO, parent=parent)
