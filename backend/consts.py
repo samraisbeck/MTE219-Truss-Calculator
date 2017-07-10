@@ -12,9 +12,16 @@ pi = 3.14159265359
 memDens = 133
 jointDens = 650
 
+
 INFO = 0
 WARN = 1
 ERR = 2
+YES_NO = 3
+
+SAVED = 0
+NO_SAVE = 1
+SAVE_CANCEL = 2
+
 
 
 alphabet = 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'

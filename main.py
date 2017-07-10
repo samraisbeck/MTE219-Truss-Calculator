@@ -48,8 +48,8 @@ class TrussCalc(QtGui.QMainWindow):
         super(TrussCalc, self).__init__()
         self.memsListNew = []
         self.jointsListNew = []
-        self.mIndex = -1
-        self.jIndex = -1
+        self._mIndex = -1
+        self._jIndex = -1
         self.specs = ['Name', 'H-H Length', 'Width', 'Thickness', 'Force', 'Hole-Edge Dist', 'Hole Support(s)', 'Compression', 'Box Beam']
         self.tips = ['Name should be two letters corresponding to the end joints (i.e AD)', 'Distance between the centers of the holes on each end', 'Width of the member',\
                      'Thickness of the member', 'Force relative to the applied load', 'Distance from the center of the hole to the end edge of the member', \
@@ -62,6 +62,25 @@ class TrussCalc(QtGui.QMainWindow):
         self.specGrid = None
         self._initLogger()
         self._initUI()
+        self.askSave = False
+# Set up mIndex with decorators so that as soon as it's changed, we can update
+# the seek buttons, rather than having them update all over the place.
+    @property
+    def mIndex(self): return self._mIndex
+
+    @mIndex.setter
+    def mIndex(self, val):
+        self._mIndex = val
+        flag = self.buttonSeekRight.isEnabled()
+        if self._mIndex >= len(self.memsListNew)-1 and flag:
+            self.buttonSeekRight.setEnabled(False)
+        elif self._mIndex < len(self.memsListNew)-1 and not flag:
+            self.buttonSeekRight.setEnabled(True)
+        flag = self.buttonSeekLeft.isEnabled()
+        if self._mIndex <= 0 and flag:
+            self.buttonSeekLeft.setEnabled(False)
+        elif self._mIndex > 0 and not flag:
+            self.buttonSeekLeft.setEnabled(True)
 
     def _initLogger(self):
 
@@ -124,26 +143,32 @@ class TrussCalc(QtGui.QMainWindow):
                 self.specGrid.addLayout(hbox, i, 0)
             else:
                 self.specGrid.addLayout(hbox, i%(mid+1), 1)
-        smallBox = QtGui.QHBoxLayout()
+        memButtons1, memButtons2 = self._memButtons()
+        self.specGrid.addLayout(memButtons1, len(self.specs)%(mid+1), 1)
+        self.specGrid.addLayout(memButtons2, len(self.specs)%(mid+1)+1, 0, 1, 2)
+        Qw.setLayout(self.specGrid)
+        return Qw
+
+    def _memButtons(self):
+        smallBox1 = QtGui.QHBoxLayout()
         buttonAddMember = QtGui.QPushButton('Add Member', parent=self)
-        smallBox.addWidget(buttonAddMember)
+        smallBox1.addWidget(buttonAddMember)
         buttonAddMember.clicked.connect(self.addMember)
         buttonFixMember = QtGui.QPushButton('Edit Member', parent=self)
-        smallBox.addWidget(buttonFixMember)
+        smallBox1.addWidget(buttonFixMember)
         buttonFixMember.clicked.connect(self.fixMember)
-        self.specGrid.addLayout(smallBox, len(self.specs)%(mid+1), 1)
-        smallBox = QtGui.QHBoxLayout()
+
+        smallBox2 = QtGui.QHBoxLayout()
         self.buttonSeekLeft = QtGui.QPushButton('Previous', parent=self)
         self.buttonSeekLeft.setEnabled(False)
-        smallBox.addWidget(self.buttonSeekLeft)
+        smallBox2.addWidget(self.buttonSeekLeft)
         self.buttonSeekLeft.clicked.connect(self.seekLeft)
         self.buttonSeekRight = QtGui.QPushButton('Next', parent=self)
         self.buttonSeekRight.setEnabled(False)
-        smallBox.addWidget(self.buttonSeekRight)
+        smallBox2.addWidget(self.buttonSeekRight)
         self.buttonSeekRight.clicked.connect(self.seekRight)
-        self.specGrid.addLayout(smallBox, len(self.specs)%(mid+1)+1, 0, 1, 2)
-        Qw.setLayout(self.specGrid)
-        return Qw
+
+        return smallBox1, smallBox2
 
     def _jointSpecs(self):
         Qw = QtGui.QWidget()
@@ -223,9 +248,27 @@ class TrussCalc(QtGui.QMainWindow):
         self.menuBar().addMenu(m)
 
     def saveDesign(self):
-        pass
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save your file', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
+        if not filename[0] == '':
+            try:
+                handler = LoadAndSave(os.path.dirname(filename[0]))
+                handler.save(filename[0], RESULTS, mw.memsListNew, mw.jointsListNew)
+                self.askSave = False
+                logger.info('File saved to '+filename[0])
+                return SAVED
+            except:
+                logger.warning('Something went wrong while saving.')
+                return SAVE_CANCEL
+        else:
+            logger.warning('Nothing was saved...')
+            return SAVE_CANCEL
 
     def loadDesign(self):
+        if self.askSave:
+            if self.savePrompt() == SAVE_CANCEL:
+                query = PopUp('Nothing was saved, are you sure you want to continue?', YES_NO, self)
+                if query.reply == QtGui.QMessageBox.No:
+                    return
         loadFile = QtGui.QFileDialog.getOpenFileName(self, 'Select a file to load', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
         handler = LoadAndSave(os.path.dirname(loadFile[0]))
         loadedMems, loadedJoints = handler.load(loadFile[0])
@@ -241,9 +284,15 @@ class TrussCalc(QtGui.QMainWindow):
             button.setEnabled(False)
         self.buttonSeekRight.setEnabled(False)
         self.buttonSeekLeft.setEnabled(True)
+        self.askSave = False
 
     def newDesign(self):
         # Empty the lists
+        if self.askSave:
+            if self.savePrompt() == SAVE_CANCEL:
+                query = PopUp('Nothing was saved, are you sure you want to continue?', YES_NO, self)
+                if query.reply == QtGui.QMessageBox.No:
+                    return
         self.memsListNew = []
         self.jointsListNew = []
         # Set each textbox and checkbox to blank
@@ -268,6 +317,13 @@ class TrussCalc(QtGui.QMainWindow):
 
     def showDevelopment(self):
         WidgetDevelopment(parent=self)
+
+    def savePrompt(self):
+        query = PopUp('Design not saved! Do you want to save?', YES_NO, self)
+        if query.reply == QtGui.QMessageBox.Yes:
+            return self.saveDesign()
+        else:
+            return NO_SAVE
 
     def seekLeft(self):
         if not self.buttonSeekRight.isEnabled():
@@ -316,6 +372,7 @@ class TrussCalc(QtGui.QMainWindow):
                     raise
                 newJoint = Joint(self.jointInfo[0].text(), self.selectedJoints)
                 self.jointsListNew.append(newJoint)
+                self.askSave = True
                 logger.info('Created joint: '+str(newJoint))
             except:
                 PopUp('ERROR: Joint must have at least 2 members attached!', ERR, self)
@@ -347,6 +404,7 @@ class TrussCalc(QtGui.QMainWindow):
                 self.buttonSeekLeft.setEnabled(True)
             if self.buttonSeekRight.isEnabled():
                 self.buttonSeekRight.setEnabled(False)
+            self.askSave = True
             logger.info('Added member with data: '+str(newMember))
         except:
             PopUp("ERROR: Check the entries you have made, they should all be numbers, except the name...", ERR, self)
@@ -367,10 +425,12 @@ class TrussCalc(QtGui.QMainWindow):
                 for m in range(len(self.jointsListNew[i].members)):
                     if self.jointsListNew[i].members[m].n == oldMember.n:
                         self.jointsListNew[i].members[m] = fixedMember
+            self.askSave = True
             logger.info('Updated the following member:\n'+str(oldMember)+'\nto\n'+str(fixedMember))
         except:
             PopUp("ERROR: Check the entries you have made, they should all be numbers, except the name...", ERR, self)
             logger.error("Check the entries you have made, they should all be numbers, except the name...")
+
     def appendJoint(self):
         if not self.creatingJoint and self.createJointButton.isEnabled():
             PopUp('WARNING: You must press "Begin Joint Creation" then select the joints!', WARN, self)
@@ -406,6 +466,15 @@ class TrussCalc(QtGui.QMainWindow):
     def updateStatus(self, msg):
         self.statusBar().showMessage(msg)
 
+    def closeEvent(self, event):
+        if self.askSave:
+            if self.savePrompt() == SAVE_CANCEL:
+                query = PopUp('Nothing was saved, are you sure you want to continue?', YES_NO, self)
+                if query.reply == QtGui.QMessageBox.No:
+                    event.ignore()
+                    return
+        super(TrussCalc, self).closeEvent(event)
+
 
 # Member(name, hole-hole length, endWidth, thickness, compression bool,
 #        internal force, hole distance from edge, boxBeam?, holeSupport)
@@ -430,16 +499,3 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     mw = TrussCalc()
     app.exec_()
-    if mw.memsListNew == []:
-        sys.exit(0)
-    save = raw_input("Would you like to save your results? (Y/N): ")
-    if (save == 'y') or (save == 'Y'):
-        name = raw_input('Enter a name for this design: ')
-        filename = name
-        directory = os.path.dirname(os.path.abspath(__file__))+os.sep+'designs'
-        fileCopy = 0
-        while os.path.isfile(directory+os.sep+filename+'.txt'):
-            fileCopy += 1
-            filename = name+'('+str(fileCopy)+')'
-        fileHandler = LoadAndSave(directory)
-        fileHandler.save(directory+os.sep+filename, RESULTS, mw.memsListNew, mw.jointsListNew)

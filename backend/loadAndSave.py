@@ -11,8 +11,10 @@ class LoadAndSave:
     def save(self, filename, results, mList, jList):
         if not os.path.exists(self.dirPath):
             os.makedirs(self.dirPath)
-        #os.chdir(self.dirPath)
-        f = open(filename+'.txt', 'w')
+        if filename[-4:] != '.txt':
+            f = open(filename+'.txt', 'w')
+        else:
+            f = open(filename, 'w')
         f.write('All failures are in Newtons of load force!\n\n'+results+'\n\n\n#### Member Specs ####\nEverything in SI units (i.e meters)\n\n')
         for m in mList:
             f.writelines(['---Member '+ifThen(m.l != 0,m.n,m.n+' (external force)')+'---','\nLength: '+str(m2mm(m.l)),' mm\nWidth: '+str(m2mm(m.w)),' mm\nThickness: '+str(m2mm(m.t)),\
