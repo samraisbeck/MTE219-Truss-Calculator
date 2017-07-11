@@ -19,6 +19,8 @@ class Member:
         NOTE: All distance measurements are in meters, volume in m^3,
         inertia in m^4, for easy calculations.
         Once saved, it converts to mm for easy reading.
+
+        Also, for a box beam, thickness and width are the two side lengths.
         """
         # also, treat reactions as members for the sake of pin shear
         self.n = name # AB, BC, CD, etc
@@ -31,9 +33,9 @@ class Member:
         self.v = v #volume
         self.i = i #area moment of inertia
         self.isBox = box #is it a box beam?
-        self.holeSup = holeSupport+1 #number hole supports (no extras is considered 1!)
+        self.holeSup = holeSupport+1 #number of extra hole supports
         if self.isBox != 0:
-            self.i = ifThen(self.i == 0, (self.w**4)/12 - ((self.w-2*genThick)**4)/12, self.i)
+            self.i = ifThen(self.i == 0, (self.w*(self.t**3))/12 - ((self.w-2*genThick)*((self.t-2*genThick)**3))/12, self.i)
             self.v = ifThen(self.v == 0, (2*self.holeDist+self.l)*((self.w**2)-(self.w-2*genThick)**2)-((dowelDiam**2)*(pi/4)*genThick*4), self.v)
         else:
             self.i = ifThen(self.i == 0, self.w*(self.t**3)/12, self.i)
@@ -43,7 +45,7 @@ class Member:
 
     def __str__(self):
         return '['+self.n+', '+str(self.l)+', '+str(self.w)+', '+str(self.t)+', '+str(self.f)+', '+\
-        str(self.holeDist)+', '+str(self.v)+', '+str(self.i)+', '+str(self.holeSup-1)+','+str(self.comp)+', '+str(self.isBox)+']'
+        str(self.holeDist)+', '+str(self.v)+', '+str(self.i)+', '+str(self.holeSup-1)+', '+str(self.comp)+', '+str(self.isBox)+']'
 
 class Joint:
     def __init__(self, name, members):

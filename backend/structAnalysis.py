@@ -18,7 +18,7 @@ class StructAnalysis:
                 endFail = (beamUltNorm*(mems[i].holeSup*mems[i].t*(mems[i].w - dowelDiam))/mems[i].f)
                 res = ifThen(midFail < endFail, midFail, endFail)
             elif mems[i].isBox:
-                res = beamUltNorm*((mems[i].w**2) - (mems[i].w - 2*genThick)**2)/mems[i].f
+                res = beamUltNorm*((mems[i].w*mems[i].t) - (mems[i].w - 2*genThick)*(mems[i].t - 2*genThick))/mems[i].f
             else:
                 res = (beamUltNorm*(mems[i].t*mems[i].w)/mems[i].f)
             result += "Member "+mems[i].n+": "+str(round(res, 3))+'\n'
@@ -58,6 +58,8 @@ class StructAnalysis:
                     +joints[i].members[2].n+": "+str(round(temp[1], 3))+"\n\n"
             else:
                 pass
+        if result == '':
+            result += 'No joints with 3 members. Be sure to calculate pin shear\nfor joints with 2 members by hand!\n\n'
         return result
 
     def calcPinBend(self, joints):
@@ -108,8 +110,8 @@ class StructAnalysis:
                 tMems.append(self.mems[i])
         internals = tMems+cMems
 
-        return "\n*****Failure due to Normal Stress***** \n"+self.calcNormal(internals)+"\n*****Failure due to Pin Tear-out***** \n"+\
+        return "*****Failure due to Normal Stress***** \n"+self.calcNormal(internals)+"\n*****Failure due to Pin Tear-out***** \n"+\
         self.calcPinTear(tMems)+"\n*****Failure due to Bearing Stress***** \n"+self.calcBear(internals)+"\n*****Failure due to Pin Shear***** \n"+\
         self.calcPinShear3(self.joints)+"*****Failure due to Pin Bend***** \n"+self.calcPinBend(self.joints)+"\n*****Failure due to Buckling***** \n"+\
-        self.calcBuckle(cMems)+"\n*****"+self.calcMass(internals, self.joints)+'\n\n'
+        self.calcBuckle(cMems)+"\n*****"+self.calcMass(internals, self.joints)+'\n'
         # One massive string...

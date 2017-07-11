@@ -37,6 +37,7 @@ from PySide import QtGui, QtCore
 from widgets.popUps import PopUp
 from widgets.widgetHelp import WidgetHelp
 from widgets.widgetDevelopment import WidgetDevelopment
+from widgets.widgetResults import WidgetResults
 import logging
 
 logger = logging.getLogger(LOGGER)
@@ -60,9 +61,10 @@ class TrussCalc(QtGui.QMainWindow):
         self.createJointButton = None
         self.creatingJoint = False
         self.specGrid = None
+        self.fName = 'unknown'
+        self.askSave = False
         self._initLogger()
         self._initUI()
-        self.askSave = False
 # Set up mIndex with decorators so that as soon as it's changed, we can update
 # the seek buttons, rather than having them update all over the place.
     @property
@@ -71,16 +73,17 @@ class TrussCalc(QtGui.QMainWindow):
     @mIndex.setter
     def mIndex(self, val):
         self._mIndex = val
-        flag = self.buttonSeekRight.isEnabled()
-        if self._mIndex >= len(self.memsListNew)-1 and flag:
-            self.buttonSeekRight.setEnabled(False)
-        elif self._mIndex < len(self.memsListNew)-1 and not flag:
-            self.buttonSeekRight.setEnabled(True)
-        flag = self.buttonSeekLeft.isEnabled()
-        if self._mIndex <= 0 and flag:
-            self.buttonSeekLeft.setEnabled(False)
-        elif self._mIndex > 0 and not flag:
-            self.buttonSeekLeft.setEnabled(True)
+        self.buttonSeekRight.setEnabled(self._mIndex < len(self.memsListNew)-1)
+        self.buttonSeekLeft.setEnabled(self._mIndex > 0)
+        self.createJointButton.setEnabled(self._mIndex > 0)
+
+    @property
+    def jIndex(self): return self._jIndex
+
+    @jIndex.setter
+    def jIndex(self, val):
+        self._jIndex = val
+        self.clearJointsButton.setEnabled(self._jIndex >= 0)
 
     def _initLogger(self):
 
@@ -88,12 +91,24 @@ class TrussCalc(QtGui.QMainWindow):
         stderr_log_handler = colorCmdHandler.ColorStreamHandler()
         root_logger.addHandler(stderr_log_handler)
 
-        formatter = logging.Formatter('%(levelname)-s message from %(filename)s - %(message)s')
+        formatter = logging.Formatter('\n%(levelname)-s message from %(filename)s - %(message)s\n')
         root_logger.setLevel(logging.DEBUG)
         stderr_log_handler.setFormatter(formatter)
         stderr_log_handler.setLevel(logging.INFO)
 
     def _initUI(self):
+        self.tabs = QtGui.QTabWidget()
+        self.tabs.addTab(self._mainTab(), 'Designer')
+        self.tabs.addTab(self._resultsTab(), 'Results')
+        self.resize(500,250)
+        self.show()
+        Qw = QtGui.QWidget()
+        self.setCentralWidget(self.tabs)
+        self.setWindowTitle('Truss Failure Analysis - Sam Raisbeck 2017')
+        self.updateStatus('Add some members.')
+        self._createToolbar()
+
+    def _mainTab(self):
         self.mainGrid = QtGui.QGridLayout()
         titleFont = QtGui.QFont()
         titleFont.setBold(True)
@@ -111,14 +126,14 @@ class TrussCalc(QtGui.QMainWindow):
         self.mainGrid.addWidget(self._trussSpecs(), 1, 0)
         self.mainGrid.addWidget(self._jointSpecs(), 1, 2)
         self.mainGrid.addWidget(self._actionControl(), 2, 0, 1, 3)
-        self._createToolbar()
-        self.resize(500,250)
-        self.show()
         Qw = QtGui.QWidget()
         Qw.setLayout(self.mainGrid)
-        self.setCentralWidget(Qw)
-        self.setWindowTitle('Truss Failure Analysis - Sam Raisbeck 2017')
-        self.updateStatus('Add some members.')
+        return Qw
+
+    def _resultsTab(self):
+        self.widgetResults = WidgetResults(parent=None, res='')
+        return self.widgetResults
+
 
     def _trussSpecs(self):
         Qw = QtGui.QWidget()
@@ -179,11 +194,9 @@ class TrussCalc(QtGui.QMainWindow):
         edit.setPlaceholderText('Joint name...')
         self.jointInfo.append(edit)
         grid.addWidget(edit, 0, 1)
-        self.createJointButton = QtGui.QPushButton('Begin Joint Creation', parent=self)
-        self.createJointButton.setMinimumWidth(round(0.2*self.width()))
-        self.createJointButton.clicked.connect(self.jointCreationClicked)
-        self.createJointButton.setEnabled(False)
-        grid.addWidget(self.createJointButton, 0, 2)
+        jointButtons1, jointButtons2 = self._jointButtons()
+        grid.addWidget(jointButtons1, 0, 2)
+        grid.addWidget(jointButtons2, 0, 3)
         #self.jointGrid.addWidget(QtGui.QLabel('Available Members'), 1, 0, 1, 2)
         for i in range(4):
             for j in range(5):
@@ -192,9 +205,22 @@ class TrussCalc(QtGui.QMainWindow):
                 self.connect(memButton, QtCore.SIGNAL('pressed()'), self.appendJoint)
                 self.jointGrid.addWidget(memButton, i, j)
                 self.jointInfo.append(memButton)
-        grid.addLayout(self.jointGrid, 1, 0, 1, 3)
+        grid.addLayout(self.jointGrid, 1, 0, 1, 4)
         Qw.setLayout(grid)
         return Qw
+
+    def _jointButtons(self):
+        self.createJointButton = QtGui.QPushButton('Begin Joint Creation', parent=self)
+        self.createJointButton.setMinimumWidth(round(0.2*self.width()))
+        self.createJointButton.clicked.connect(self.jointCreationClicked)
+        self.createJointButton.setEnabled(False)
+
+        self.clearJointsButton = QtGui.QPushButton('Clear Joints', parent=self)
+        self.clearJointsButton.setMinimumWidth(round(0.15*self.width()))
+        self.clearJointsButton.clicked.connect(self.clearJoints)
+        self.clearJointsButton.setEnabled(False)
+
+        return self.createJointButton, self.clearJointsButton
 
     def _actionControl(self):
         Qw = QtGui.QWidget()
@@ -254,10 +280,12 @@ class TrussCalc(QtGui.QMainWindow):
                 handler = LoadAndSave(os.path.dirname(filename[0]))
                 handler.save(filename[0], RESULTS, mw.memsListNew, mw.jointsListNew)
                 self.askSave = False
+                self.fName = os.path.splitext(os.path.basename(filename[0]))[0]
                 logger.info('File saved to '+filename[0])
                 return SAVED
             except:
-                logger.warning('Something went wrong while saving.')
+                PopUp('ERROR: Something went wrong while saving.', ERR, self)
+                logger.error('Something went wrong while saving.')
                 return SAVE_CANCEL
         else:
             logger.warning('Nothing was saved...')
@@ -270,21 +298,29 @@ class TrussCalc(QtGui.QMainWindow):
                 if query.reply == QtGui.QMessageBox.No:
                     return
         loadFile = QtGui.QFileDialog.getOpenFileName(self, 'Select a file to load', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
-        handler = LoadAndSave(os.path.dirname(loadFile[0]))
-        loadedMems, loadedJoints = handler.load(loadFile[0])
-        self.memsListNew, self.jointsListNew = loadedMems, loadedJoints
-        self.mIndex = len(self.memsListNew)-1
-        self.setMemTextBoxes()
-        for i in range(len(self.memsListNew)):
-            self.jointInfo[i+1].setText(self.memsListNew[i].n)
-            self.jointInfo[i+1].setEnabled(True)
-        for button in self.jointInfo[self.mIndex+2:]:
-            if not button.isEnabled():
-                break
-            button.setEnabled(False)
-        self.buttonSeekRight.setEnabled(False)
-        self.buttonSeekLeft.setEnabled(True)
-        self.askSave = False
+        if not loadFile[0] == '':
+            try:
+                self.fName = os.path.splitext(os.path.basename(loadFile[0]))[0]
+                handler = LoadAndSave(os.path.dirname(loadFile[0]))
+                loadedMems, loadedJoints = handler.load(loadFile[0])
+                self.memsListNew, self.jointsListNew = loadedMems, loadedJoints
+                self.mIndex = len(self.memsListNew)-1
+                self.jIndex = len(self.jointsListNew)-1
+                self.setMemTextBoxes()
+                for i in range(len(self.memsListNew)):
+                    self.jointInfo[i+1].setText(self.memsListNew[i].n)
+                    self.jointInfo[i+1].setEnabled(True)
+                for button in self.jointInfo[self.mIndex+2:]:
+                    if not button.isEnabled():
+                        break
+                    button.setEnabled(False)
+                    button.setText(' ')
+                self.askSave = False
+            except:
+                PopUp('ERROR: Something went wrong while loading.')
+                logger.error('Something went wrong while loading.')
+        else:
+            logger.warning('Nothing was loaded...')
 
     def newDesign(self):
         # Empty the lists
@@ -295,6 +331,8 @@ class TrussCalc(QtGui.QMainWindow):
                     return
         self.memsListNew = []
         self.jointsListNew = []
+        self.jIndex = -1
+        self.mIndex = -1
         # Set each textbox and checkbox to blank
         for i in range(len(self.specs)):
             if type(self.specInfo[i]) == QtGui.QLineEdit:
@@ -308,9 +346,7 @@ class TrussCalc(QtGui.QMainWindow):
                 break
             button.setText('  ')
             button.setEnabled(False)
-        self.createJointButton.setEnabled(False)
-        self.jIndex = 0
-        self.mIndex = 0
+        self.fName = 'unknown'
 
     def showHelp(self):
         WidgetHelp(parent=self)
@@ -326,20 +362,12 @@ class TrussCalc(QtGui.QMainWindow):
             return NO_SAVE
 
     def seekLeft(self):
-        if not self.buttonSeekRight.isEnabled():
-            self.buttonSeekRight.setEnabled(True)
         self.mIndex -= 1
         self.setMemTextBoxes()
-        if self.mIndex == 0:
-            self.buttonSeekLeft.setEnabled(False)
 
     def seekRight(self):
-        if not self.buttonSeekLeft.isEnabled():
-            self.buttonSeekLeft.setEnabled(True)
         self.mIndex += 1
         self.setMemTextBoxes()
-        if self.mIndex == len(self.memsListNew)-1:
-            self.buttonSeekRight.setEnabled(False)
 
     def setMemTextBoxes(self):
         member = self.memsListNew[self.mIndex]
@@ -372,6 +400,7 @@ class TrussCalc(QtGui.QMainWindow):
                     raise
                 newJoint = Joint(self.jointInfo[0].text(), self.selectedJoints)
                 self.jointsListNew.append(newJoint)
+                self.jIndex += 1
                 self.askSave = True
                 logger.info('Created joint: '+str(newJoint))
             except:
@@ -386,6 +415,12 @@ class TrussCalc(QtGui.QMainWindow):
             self.createJointButton.setText('Begin Joint Creation')
             self.selectedJoints = []
             self.updateStatus('Add some members or joints.')
+        self.clearJointsButton.setEnabled(not self.creatingJoint)
+
+    def clearJoints(self):
+        self.jointsListNew = []
+        self.jIndex = -1
+        logger.info('List of joints has been cleared.')
 
     def addMember(self):
         try:
@@ -397,13 +432,8 @@ class TrussCalc(QtGui.QMainWindow):
             #Adding the corresponding button for the joint-building tool
             self.jointInfo[self.mIndex+1].setText(newMember.n)
             self.jointInfo[self.mIndex+1].setEnabled(True)
-            if not self.createJointButton.isEnabled() and len(self.memsListNew) > 1:
-                self.createJointButton.setEnabled(True)
+            if len(self.jointsListNew) > 1:
                 self.updateStatus('Add some members or joints.')
-            if self.mIndex > 0 and not self.buttonSeekLeft.isEnabled():
-                self.buttonSeekLeft.setEnabled(True)
-            if self.buttonSeekRight.isEnabled():
-                self.buttonSeekRight.setEnabled(False)
             self.askSave = True
             logger.info('Added member with data: '+str(newMember))
         except:
@@ -457,11 +487,32 @@ class TrussCalc(QtGui.QMainWindow):
             print 'Currently no joints!'
 
     def calculate(self):
-        if len(self.jointsListNew) == 0:
-            PopUp('ERROR: Can\'t calculate this design.', ERR, self)
-            logger.error('Can\'t calculate this design.')
-        RESULTS = StructAnalysis(self.memsListNew, self.jointsListNew).calcAll()
-        print RESULTS
+        if self.validate():
+            RESULTS = StructAnalysis(self.memsListNew, self.jointsListNew).calcAll()
+            logger.info('Here are the results: \n\n'+RESULTS)
+            self.widgetResults.addResults("Results for design '"+self.fName+"':\n\n"+RESULTS)
+
+    def validate(self):
+        """Extremely small validation"""
+        if len(self.jointsListNew) > len(self.memsListNew):
+            PopUp('ERROR: Can\'t have more joints than members in a valid design.', ERR, self)
+            logger.error('Can\'t have more joints than members in a valid design.')
+            return False
+        if len(self.jointsListNew) <= 2 or len(self.memsListNew) <= 2:
+            PopUp('ERROR: There must be at least 3 members (and therefore 3 joints) for the design to possibly be valid.', ERR, self)
+            logger.error('There must be at least 3 members (and therefore 3 joints) for the design to possibly be valid.')
+            return False
+        for mem in self.memsListNew:
+            if mem.w != 0:
+                occur = 0
+                for joint in self.jointsListNew:
+                    if mem in joint.members:
+                        occur += 1
+                if occur != 2:
+                    PopUp('Error: Each member must connect to two joints, and only two joints.\nThis does not include external forces!', ERR, self)
+                    logger.error('Each member must connect to two joints, and only two joints.\nThis does not include external forces!')
+                    return False
+        return True
 
     def updateStatus(self, msg):
         self.statusBar().showMessage(msg)

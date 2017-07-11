@@ -39,6 +39,7 @@ class LoadAndSave:
         data = []
         jData = []
         temp = ''
+        lastWord = ''
         # First get the members loaded
         for line in f:
             # Another hash means we've hit the joint section
@@ -47,20 +48,16 @@ class LoadAndSave:
             for word in line.split():
                 if getNext:
                     try:
-                        temp = float(word)
+                        # For some reason ifThen would throw exceptions here all the time...
+                        if lastWord == 'supports:':
+                            temp = int(word)
+                        else:
+                            temp = float(word)
                     except:
+                        # Here, the first case takes care of the name of a member, second takes care of the name of
+                        # an external force, the third takes care of box beams, and the else is compression or tension.
                         temp = ifThen([word[-3:]=='---', len(data[num])==0, (word=='Yes' or word=='Compression')],
                                           [word[0:2], word, True], False)
-                        #The above statment is the same as the folded block here:
-                        # if word[-3:] == '---':
-                        #     temp = word[0:2]
-                        # elif len(data[num]) == 0:
-                        #     temp = word
-                        # elif word == 'Yes' or word == 'Compression':
-                        #     temp = True
-                        # else:
-                        #     temp = False
-                        #</editor-fold> End
                     data[num].append(temp)
                     getNext = False
                 if word[0:3] == '---':
@@ -69,6 +66,7 @@ class LoadAndSave:
                     getNext = True
                 elif word[-1] == ':':
                     getNext = True
+                lastWord = word
         num = -1
         getNext = False
         # Time for joints
