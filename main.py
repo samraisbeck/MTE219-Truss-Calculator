@@ -76,6 +76,9 @@ class TrussCalc(QtGui.QMainWindow):
         self.buttonSeekRight.setEnabled(self._mIndex < len(self.memsListNew)-1)
         self.buttonSeekLeft.setEnabled(self._mIndex > 0)
         self.createJointButton.setEnabled(self._mIndex > 0)
+        # We can use the mIndex setter function to also update the info
+        # on the other tab.
+        self.widgetResults.updateInfo(self.memsListNew, self.jointsListNew)
 
     @property
     def jIndex(self): return self._jIndex
@@ -84,9 +87,11 @@ class TrussCalc(QtGui.QMainWindow):
     def jIndex(self, val):
         self._jIndex = val
         self.clearJointsButton.setEnabled(self._jIndex >= 0)
+        # We can use the jIndex setter function to also update the info
+        # on the other tab.
+        self.widgetResults.updateInfo(self.memsListNew, self.jointsListNew)
 
     def _initLogger(self):
-
         root_logger = logging.getLogger()
         stderr_log_handler = colorCmdHandler.ColorStreamHandler()
         root_logger.addHandler(stderr_log_handler)
@@ -99,7 +104,7 @@ class TrussCalc(QtGui.QMainWindow):
     def _initUI(self):
         self.tabs = QtGui.QTabWidget()
         self.tabs.addTab(self._mainTab(), 'Designer')
-        self.tabs.addTab(self._resultsTab(), 'Results')
+        self.tabs.addTab(self._resultsTab(), 'Components/Results')
         self.resize(500,250)
         self.show()
         Qw = QtGui.QWidget()
@@ -110,9 +115,6 @@ class TrussCalc(QtGui.QMainWindow):
 
     def _mainTab(self):
         self.mainGrid = QtGui.QGridLayout()
-        titleFont = QtGui.QFont()
-        titleFont.setBold(True)
-        titleFont.setPointSize(15)
         title1 = QtGui.QLabel('Member Specifications', parent=self)
         title1.setFont(titleFont)
         title2 = QtGui.QLabel('Joint Specifications', parent=self)
@@ -131,9 +133,8 @@ class TrussCalc(QtGui.QMainWindow):
         return Qw
 
     def _resultsTab(self):
-        self.widgetResults = WidgetResults(parent=None, res='')
+        self.widgetResults = WidgetResults(parent=None)
         return self.widgetResults
-
 
     def _trussSpecs(self):
         Qw = QtGui.QWidget()
@@ -197,7 +198,7 @@ class TrussCalc(QtGui.QMainWindow):
         jointButtons1, jointButtons2 = self._jointButtons()
         grid.addWidget(jointButtons1, 0, 2)
         grid.addWidget(jointButtons2, 0, 3)
-        #self.jointGrid.addWidget(QtGui.QLabel('Available Members'), 1, 0, 1, 2)
+        #self.jointGrid.addWidget(QtGui.QLabel('Available Members', parent=self), 1, 0, 1, 2)
         for i in range(4):
             for j in range(5):
                 memButton = QtGui.QPushButton('  ', parent=self)
@@ -455,6 +456,9 @@ class TrussCalc(QtGui.QMainWindow):
                 for m in range(len(self.jointsListNew[i].members)):
                     if self.jointsListNew[i].members[m].n == oldMember.n:
                         self.jointsListNew[i].members[m] = fixedMember
+
+            # Here is the only time we need to update info when mIndex and jIndex aren't changing
+            self.widgetResults.updateInfo(self.memsListNew, self.jointsListNew)
             self.askSave = True
             logger.info('Updated the following member:\n'+str(oldMember)+'\nto\n'+str(fixedMember))
         except:
@@ -485,11 +489,13 @@ class TrussCalc(QtGui.QMainWindow):
             print i
         if self.jointsListNew == []:
             print 'Currently no joints!'
+        self.tabs.setCurrentIndex(1)
 
     def calculate(self):
         if self.validate():
             RESULTS = StructAnalysis(self.memsListNew, self.jointsListNew).calcAll()
             logger.info('Here are the results: \n\n'+RESULTS)
+            self.tabs.setCurrentIndex(1)
             self.widgetResults.addResults("Results for design '"+self.fName+"':\n\n"+RESULTS)
 
     def validate(self):
