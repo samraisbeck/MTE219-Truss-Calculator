@@ -11,7 +11,7 @@ class PopUp(object):
 
     def _initMsg(self):
         msgBox = ifThen([self.kind == INFO, self.kind == WARN],
-        [QtGui.QMessageBox(QtGui.QMessageBox.Information, 'Info', self.text, parent=self.parent),
+        [QtGui.QMessageBox(QtGui.QMessageBox.NoIcon, 'Info', self.text, parent=self.parent),
         QtGui.QMessageBox(QtGui.QMessageBox.Warning, 'Warning', self.text, parent=self.parent)],
         QtGui.QMessageBox(QtGui.QMessageBox.Critical, 'Error', self.text, parent=self.parent))
         msgBox.exec_()
