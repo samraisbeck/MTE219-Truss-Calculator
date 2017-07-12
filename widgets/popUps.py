@@ -7,11 +7,14 @@ class PopUp(object):
         self.text = text
         self.kind = kind
         self.parent = parent
-        self._initMsg()
+        self.reply = self._initMsg()
 
     def _initMsg(self):
-        msgBox = ifThen([self.kind == INFO, self.kind == WARN],
-        [QtGui.QMessageBox(QtGui.QMessageBox.NoIcon, 'Info', self.text, parent=self.parent),
-        QtGui.QMessageBox(QtGui.QMessageBox.Warning, 'Warning', self.text, parent=self.parent)],
-        QtGui.QMessageBox(QtGui.QMessageBox.Critical, 'Error', self.text, parent=self.parent))
-        msgBox.exec_()
+        if self.kind in [INFO, WARN, ERR]:
+            msgBox = ifThen([self.kind == INFO, self.kind == WARN],
+            [QtGui.QMessageBox(QtGui.QMessageBox.NoIcon, 'Info', self.text, parent=self.parent),
+            QtGui.QMessageBox(QtGui.QMessageBox.Warning, 'Warning', self.text, parent=self.parent)],
+            QtGui.QMessageBox(QtGui.QMessageBox.Critical, 'Error', self.text, parent=self.parent))
+            msgBox.exec_()
+        else:
+            return QtGui.QMessageBox.question(self.parent, 'Question', self.text, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
