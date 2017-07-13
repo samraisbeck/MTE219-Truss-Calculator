@@ -2,6 +2,10 @@ from popUps import PopUp
 from backend.consts import INFO
 
 class WidgetDevelopment(PopUp):
+    """
+    Child popup that has long text. I decided to make popups with long text their
+    own widget so that they don't make the main.py file messy.
+    """
     def __init__(self, parent=None):
         self.text = 'Developed by: Sam Raisbeck (Mechatronics Engineering Student of 2020 at the University of Waterloo)\n'+\
         'Developed for: MTE219 Truss Project (instructor: Prof. Hamid Jahed)\n\n'+\

@@ -2,7 +2,7 @@
 Program to calculate the modes of failure for a crane truss.
 
 ## General Info
-By Sam Raisbeck - Updated July 7, 2017
+By Sam Raisbeck - Updated July 13, 2017
 
 This program is meant for calculating the failure modes and corresponding
 loads for a crane design (MTE 219 @ UW). To look see how to use the GUI, run
@@ -10,13 +10,9 @@ the program and go to About->Help or hit Ctrl+H.
 
 ## To run the program
 You need to have Python 2.7. The only external package is PySide. I used Enthought Canopy package manager
-to download PySide, but I think `pip install pyside` would also work. I haven't tried
-that though.
+to download PySide, but I think `pip install pyside` would also work. I haven't tried that though.
 
-Go to the command line, and do:
-```cd ...\...\MTE219-Truss-Calculator
-python main.py [designName]
-```
+Go to the command line, and do: `cd ...\...\MTE219-Truss-Calculator` then `python main.py [designName]`
 The program will open with the design previously saved as 'designName' if this argument is provided.
 Note that you do not need to include the extension (.txt) but it won't cause an error if you do.
 

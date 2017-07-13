@@ -5,6 +5,13 @@ from components import Member, Joint
 import argparse
 
 class LoadAndSave:
+    """
+    Class that handles saving designs and loading previously saved ones. I use a
+    specific format in text files to save data, and then follow that format to
+    load data.
+    Running this file on its own allows for testing the load functionality,
+    by passing a filename as the argument.
+    """
     def __init__(self, dirPath):
         self.dirPath = dirPath
 
@@ -108,5 +115,5 @@ if __name__ == '__main__':
     parser.add_argument('loadName', help='Name of file to be loaded (excluding extension).',
     metavar='filename', type=str)
     args = parser.parse_args()
-    a = LoadAndSave(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+os.sep+'designs')
+    a = LoadAndSave(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+os.sep+'designs')
     a.load(args.loadName)

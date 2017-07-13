@@ -2,6 +2,10 @@ from consts import *
 from helpers import *
 
 class StructAnalysis:
+    """
+    Class to handle the basic failure load calculations for trusses and their
+    members/joints.
+    """
     def __init__(self, memberList, jointList):
         self.mems = memberList
         self.joints = jointList

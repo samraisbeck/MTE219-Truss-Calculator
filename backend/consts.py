@@ -1,4 +1,4 @@
-# File to store constants in
+""" File to store constants in. """
 import os
 from PySide import QtGui
 

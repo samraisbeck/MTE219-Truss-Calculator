@@ -3,6 +3,11 @@ from backend.consts import *
 from backend.helpers import ifThen
 
 class PopUp(object):
+    """
+    Class to handle error, warning, information and question popups.
+    Widgets like Help and Development use this class as a basis, and then
+    just have their own text and kind.
+    """
     def __init__(self, text, kind=INFO, parent=None):
         self.text = text
         self.kind = kind

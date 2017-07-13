@@ -1,6 +1,13 @@
 from consts import *
 from helpers import ifThen, ifthenelif
 
+"""
+This file contains the components to a truss design; members and joints.
+Pretty simple, members just contain a bunch of properties. It also determines
+its own volume and moment of inertia based on properties that are simpler to
+measure.
+"""
+
 class Member:
     def __init__(self, name, l, w, t, comp, f, holeDist, v = 0, i = 0, box = False, holeSupport = 0):
         """

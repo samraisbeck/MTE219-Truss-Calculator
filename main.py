@@ -1,28 +1,10 @@
 # Group 24 - MODS Project: Failure Analysis
 # Based on theoretical/experimental values
 """
-By Sam Raisbeck - Updated June 16, 2017
+By Sam Raisbeck
 
-This program is meant for calculating the failure modes and corresponding
-loads for a crane design (MTE 219 @ UW). Currently, you must enter in the values
-below for member length, width, etc. Soon a GUI will be added making this
-easier.
-It's easy to create members, just add in the correct values. To create joints,
-the members must be added to the joints such that they are in order of
-appearance when viewing the structure from the side. It does not matter which
-side it is viewed from, just stay consistent. This is so that pin-shear
-calculations can be done easily.
-Currently there is no feature implemented to do a pin-shear for more than 3-
-member joints. This is because you would need to know the geometry with angles.
-It can be done, it just would add more attributes to the members, and also would
-require consistency with reference angles and stuff like that.
-
-***Update July 5 2017
-Added a very simple GUI structure, not yet functional for adding custom
-members, but the general structure is there. The only thing to do is to
-basically get the AddMember button working, which won't be hard...but the
-joints might take some tricky GUI work. I'm thinking of adding in just a list
-of members that you can select for each joint.
+See the README for more information, as well as the help window within
+the program.
 
 """
 
@@ -278,7 +260,7 @@ class TrussCalc(QtGui.QMainWindow):
         self.menuBar().addMenu(m)
 
     def saveDesign(self):
-        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save your file', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save your file', os.path.dirname(os.path.realpath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
         if not filename[0] == '':
             try:
                 handler = LoadAndSave(os.path.dirname(filename[0]))
@@ -302,9 +284,11 @@ class TrussCalc(QtGui.QMainWindow):
                 if query.reply == QtGui.QMessageBox.No:
                     return
         if name == '':
-            loadFile = QtGui.QFileDialog.getOpenFileName(self, 'Select a file to load', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
+            loadFile = QtGui.QFileDialog.getOpenFileName(self, 'Select a file to load', os.path.dirname(os.path.realpath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
         else:
-            loadFile = [os.path.dirname(os.path.abspath(__file__))+os.sep+'designs'+os.sep+name, '']
+            # We make it a list so the rest of the code is compatable whether this is being called
+            # by the load tool or by the argument on startup.
+            loadFile = [os.path.dirname(os.path.realpath(__file__))+os.sep+'designs'+os.sep+name, '']
             if not loadFile[0][-4:] == '.txt':
                 loadFile[0] += '.txt'
         if not loadFile[0] == '':
@@ -427,9 +411,10 @@ class TrussCalc(QtGui.QMainWindow):
         self.clearLastJointButton.setEnabled(not self.creatingJoint)
 
     def clearLastJoint(self):
-        self.jointsListNew.pop()
+        removed = self.jointsListNew.pop()
         self.jIndex -= 1
-        logger.info('Last joint created has been removed.')
+        logger.info('Last joint has been removed: '+str(removed))
+        self.askSave = True
 
     def addMember(self):
         try:

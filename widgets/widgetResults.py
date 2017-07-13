@@ -3,6 +3,10 @@ from backend.helpers import ifThen
 from backend.consts import *
 
 class WidgetResults(QtGui.QWidget):
+    """
+    Widget to display the current components of the design and
+    the results of the calculation (if inititiated).
+    """
     def __init__(self, parent=None):
         super(WidgetResults, self).__init__(parent)
         self.results = 'No results to show yet!'
