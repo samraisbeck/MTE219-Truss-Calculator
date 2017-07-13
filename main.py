@@ -45,7 +45,7 @@ logger = logging.getLogger(LOGGER)
 RESULTS = ''
 
 class TrussCalc(QtGui.QMainWindow):
-    def __init__(self):
+    def __init__(self, loadDesignName=''):
         super(TrussCalc, self).__init__()
         self.memsListNew = []
         self.jointsListNew = []
@@ -65,6 +65,9 @@ class TrussCalc(QtGui.QMainWindow):
         self.askSave = False
         self._initLogger()
         self._initUI()
+        if loadDesignName != '':
+            self.loadDesign(loadDesignName)
+
 # Set up mIndex with decorators so that as soon as it's changed, we can update
 # the seek buttons, rather than having them update all over the place.
     @property
@@ -105,13 +108,13 @@ class TrussCalc(QtGui.QMainWindow):
         self.tabs = QtGui.QTabWidget()
         self.tabs.addTab(self._mainTab(), 'Designer')
         self.tabs.addTab(self._resultsTab(), 'Components/Results')
+        self._createToolbar()
         self.resize(500,250)
         self.show()
         Qw = QtGui.QWidget()
         self.setCentralWidget(self.tabs)
         self.setWindowTitle('Truss Failure Analysis - Sam Raisbeck 2017')
         self.updateStatus('Add some members.')
-        self._createToolbar()
 
     def _mainTab(self):
         self.mainGrid = QtGui.QGridLayout()
@@ -292,13 +295,18 @@ class TrussCalc(QtGui.QMainWindow):
             logger.warning('Nothing was saved...')
             return SAVE_CANCEL
 
-    def loadDesign(self):
+    def loadDesign(self, name=''):
         if self.askSave:
             if self.savePrompt() == SAVE_CANCEL:
                 query = PopUp('Nothing was saved, are you sure you want to continue?', YES_NO, self)
                 if query.reply == QtGui.QMessageBox.No:
                     return
-        loadFile = QtGui.QFileDialog.getOpenFileName(self, 'Select a file to load', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
+        if name == '':
+            loadFile = QtGui.QFileDialog.getOpenFileName(self, 'Select a file to load', os.path.dirname(os.path.abspath(__file__))+os.sep+'designs', 'Text Documents (*.txt)')
+        else:
+            loadFile = [os.path.dirname(os.path.abspath(__file__))+os.sep+'designs'+os.sep+name, '']
+            if not loadFile[0][-4:] == '.txt':
+                loadFile[0] += '.txt'
         if not loadFile[0] == '':
             try:
                 self.fName = os.path.splitext(os.path.basename(loadFile[0]))[0]
@@ -554,5 +562,8 @@ class TrussCalc(QtGui.QMainWindow):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    mw = TrussCalc()
+    designName = ''
+    if len(sys.argv)>1:
+        designName = sys.argv[1]
+    mw = TrussCalc(loadDesignName=designName)
     app.exec_()
