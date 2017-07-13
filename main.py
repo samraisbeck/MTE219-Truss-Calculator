@@ -86,7 +86,7 @@ class TrussCalc(QtGui.QMainWindow):
     @jIndex.setter
     def jIndex(self, val):
         self._jIndex = val
-        self.clearJointsButton.setEnabled(self._jIndex >= 0)
+        self.clearLastJointButton.setEnabled(self._jIndex >= 0)
         # We can use the jIndex setter function to also update the info
         # on the other tab.
         self.widgetResults.updateInfo(self.memsListNew, self.jointsListNew)
@@ -216,12 +216,12 @@ class TrussCalc(QtGui.QMainWindow):
         self.createJointButton.clicked.connect(self.jointCreationClicked)
         self.createJointButton.setEnabled(False)
 
-        self.clearJointsButton = QtGui.QPushButton('Clear Joints', parent=self)
-        self.clearJointsButton.setMinimumWidth(round(0.15*self.width()))
-        self.clearJointsButton.clicked.connect(self.clearJoints)
-        self.clearJointsButton.setEnabled(False)
+        self.clearLastJointButton = QtGui.QPushButton('Clear Last Joint', parent=self)
+        self.clearLastJointButton.setMinimumWidth(round(0.15*self.width()))
+        self.clearLastJointButton.clicked.connect(self.clearLastJoint)
+        self.clearLastJointButton.setEnabled(False)
 
-        return self.createJointButton, self.clearJointsButton
+        return self.createJointButton, self.clearLastJointButton
 
     def _actionControl(self):
         Qw = QtGui.QWidget()
@@ -416,12 +416,12 @@ class TrussCalc(QtGui.QMainWindow):
             self.createJointButton.setText('Begin Joint Creation')
             self.selectedJoints = []
             self.updateStatus('Add some members or joints.')
-        self.clearJointsButton.setEnabled(not self.creatingJoint)
+        self.clearLastJointButton.setEnabled(not self.creatingJoint)
 
-    def clearJoints(self):
-        self.jointsListNew = []
-        self.jIndex = -1
-        logger.info('List of joints has been cleared.')
+    def clearLastJoint(self):
+        self.jointsListNew.pop()
+        self.jIndex -= 1
+        logger.info('Last joint created has been removed.')
 
     def addMember(self):
         try:
